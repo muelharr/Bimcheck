@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BimCheck - Sistem Bimbingan Mahasiswa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 p-2 rounded-lg">
+                    <i class="fas fa-calendar-alt text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-gray-800">BimCheck</h1>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <button onclick="showPage('notifikasi')" class="relative p-2 hover:bg-gray-100 rounded-lg transition">
+                    <i class="fas fa-bell text-gray-600 text-xl"></i>
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">2</span>
+                </button>
+                
+                <button class="p-2 hover:bg-gray-100 rounded-lg transition">
+                    <i class="fas fa-user text-gray-600 text-xl"></i>
+                </button>
+                
+                <button class="p-2 hover:bg-gray-100 rounded-lg transition text-red-600">
+                    <i class="fas fa-sign-out-alt text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto pb-20">
+        
+        <!-- Dashboard Page -->
+        <div id="dashboard-page" class="page-content">
+            <div class="p-6 space-y-6">
+                <!-- Welcome Card -->
+                <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg p-6 text-white">
+                    <h2 class="text-2xl font-bold mb-2">Selamat Datang, Mahasiswa!</h2>
+                    <p class="text-blue-100">NIM: 1234567890</p>
+                </div>
+
+                <!-- Menu Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="showPage('booking')" class="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition flex items-center space-x-4 border-2 border-transparent hover:border-blue-500">
+                        <div class="bg-blue-100 p-3 rounded-lg">
+                            <i class="fas fa-calendar-plus text-blue-600 text-3xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="font-semibold text-lg">Booking Bimbingan</h3>
+                            <p class="text-gray-600 text-sm">Ajukan jadwal bimbingan</p>
+                        </div>
+                    </button>
+
+                    <button onclick="showPage('scan')" class="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition flex items-center space-x-4 border-2 border-transparent hover:border-green-500">
+                        <div class="bg-green-100 p-3 rounded-lg">
+                            <i class="fas fa-qrcode text-green-600 text-3xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="font-semibold text-lg">Scan QR</h3>
+                            <p class="text-gray-600 text-sm">Validasi kehadiran bimbingan</p>
+                        </div>
+                    </button>
+
+                    <button onclick="showPage('antrian')" class="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition flex items-center space-x-4 border-2 border-transparent hover:border-purple-500">
+                        <div class="bg-purple-100 p-3 rounded-lg">
+                            <i class="fas fa-clock text-purple-600 text-3xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="font-semibold text-lg">Lihat Antrian</h3>
+                            <p class="text-gray-600 text-sm">Cek status booking Anda</p>
+                        </div>
+                    </button>
+
+                    <button onclick="showPage('riwayat')" class="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition flex items-center space-x-4 border-2 border-transparent hover:border-orange-500">
+                        <div class="bg-orange-100 p-3 rounded-lg">
+                            <i class="fas fa-list text-orange-600 text-3xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="font-semibold text-lg">Riwayat Bimbingan</h3>
+                            <p class="text-gray-600 text-sm">Lihat riwayat bimbingan</p>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Bimbingan Mendatang -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="font-semibold text-lg mb-4 flex items-center">
+                        <i class="fas fa-clock text-blue-600 mr-2"></i>
+                        Bimbingan Mendatang
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="border-l-4 border-blue-500 pl-4 py-2">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-semibold">Konsultasi BAB 2</p>
+                                    <p class="text-sm text-gray-600">12 Des 2024 - 10:00</p>
+                                    <p class="text-xs text-gray-500">No. Antrian: A001</p>
+                                </div>
+                                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                                    Disetujui
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Page -->
+        <div id="booking-page" class="page-content hidden">
+            <div class="p-6 max-w-2xl mx-auto">
+                <button onclick="showPage('dashboard')" class="mb-4 text-blue-600 hover:text-blue-800 flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i> Kembali ke Dashboard
+                </button>
+                
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-2xl font-bold mb-6">Booking Bimbingan</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Topik Bimbingan</label>
+                            <input type="text" id="topik" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Masukkan topik bimbingan">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Deskripsi</label>
+                            <textarea id="deskripsi" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" rows="4" placeholder="Jelaskan hal yang ingin dikonsultasikan"></textarea>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Tanggal</label>
+                                <input type="date" id="tanggal" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Waktu</label>
+                                <input type="time" id="waktu" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+                        
+                        <button onclick="submitBooking()" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                            Kirim Booking
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scan QR Page -->
+        <div id="scan-page" class="page-content hidden">
+            <div class="p-6 max-w-2xl mx-auto">
+                <button onclick="showPage('dashboard')" class="mb-4 text-blue-600 hover:text-blue-800 flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i> Kembali ke Dashboard
+                </button>
+                
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-2xl font-bold mb-6 text-center">Scan QR Code</h2>
+                    
+                    <div id="scan-area" class="text-center">
+                        <!-- QR Code Scanner -->
+                        <div id="qr-reader" class="mb-4"></div>
+                        <div id="qr-reader-placeholder" class="bg-gray-100 rounded-lg p-12 mb-6">
+                            <i class="fas fa-camera text-gray-400 text-9xl mb-4"></i>
+                            <p class="text-gray-600 mb-4">Scan QR Code dari dosen untuk check-in</p>
+                            <button onclick="startQRScanner()" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-semibold">
+                                <i class="fas fa-camera mr-2"></i> Buka Kamera
+                            </button>
+                        </div>
+                        
+                        <p class="text-sm text-gray-500 mt-4">
+                            * Pastikan Anda sudah memiliki jadwal bimbingan yang disetujui
+                        </p>
+                        <p class="text-sm text-gray-500">
+                            * Izinkan akses kamera saat diminta browser
+                        </p>
+                    </div>
+
+                    <div id="scan-result" class="hidden">
+                        <div class="text-center">
+                            <i class="fas fa-check-circle text-green-500 text-9xl mb-4"></i>
+                            <h3 class="text-xl font-bold text-green-700 mb-4">QR Code Valid!</h3>
+                            
+                            <div class="bg-green-50 rounded-lg p-6 mb-6 text-left">
+                                <div class="space-y-2">
+                                    <p><span class="font-semibold">Dosen:</span> <span id="dosen-name"></span></p>
+                                    <p><span class="font-semibold">Data QR:</span> <span id="qr-data"></span></p>
+                                    <p><span class="font-semibold">Waktu Scan:</span> <span id="waktu-scan"></span></p>
+                                </div>
+                            </div>
+                            
+                            <button onclick="checkIn()" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold mb-3">
+                                <i class="fas fa-check mr-2"></i> Check-In Sekarang
+                            </button>
+                            
+                            <button onclick="resetScanner()" class="w-full bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 transition font-semibold">
+                                <i class="fas fa-redo mr-2"></i> Scan Ulang
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Antrian Page -->
+        <div id="antrian-page" class="page-content hidden">
+            <div class="p-6">
+                <button onclick="showPage('dashboard')" class="mb-4 text-blue-600 hover:text-blue-800 flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i> Kembali ke Dashboard
+                </button>
+                
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-2xl font-bold mb-6">Daftar Antrian Bimbingan</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="border rounded-lg p-4 hover:shadow-md transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="font-semibold text-lg">Konsultasi BAB 2</p>
+                                    <p class="text-sm text-gray-600">12 Des 2024 - 10:00</p>
+                                </div>
+                                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                                    Disetujui
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-500">No. Antrian: A001</p>
+                        </div>
+
+                        <div class="border rounded-lg p-4 hover:shadow-md transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="font-semibold text-lg">Review BAB 3</p>
+                                    <p class="text-sm text-gray-600">15 Des 2024 - 14:00</p>
+                                </div>
+                                <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">
+                                    Menunggu
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-500">No. Antrian: A002</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Riwayat Page -->
+        <div id="riwayat-page" class="page-content hidden">
+            <div class="p-6">
+                <button onclick="showPage('dashboard')" class="mb-4 text-blue-600 hover:text-blue-800 flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i> Kembali ke Dashboard
+                </button>
+                
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-2xl font-bold mb-6">Riwayat Bimbingan</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="border-l-4 border-blue-500 pl-4 py-3 hover:bg-gray-50 transition">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-semibold">Konsultasi BAB 1</p>
+                                    <p class="text-sm text-gray-600">10 Des 2024 - 10:00</p>
+                                    <p class="text-sm text-gray-500">Dosen: Dr. Ahmad</p>
+                                </div>
+                                <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-semibold">
+                                    Selesai
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="border-l-4 border-blue-500 pl-4 py-3 hover:bg-gray-50 transition">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-semibold">Review Proposal</p>
+                                    <p class="text-sm text-gray-600">8 Des 2024 - 14:00</p>
+                                    <p class="text-sm text-gray-500">Dosen: Dr. Ahmad</p>
+                                </div>
+                                <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-semibold">
+                                    Selesai
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="border-l-4 border-blue-500 pl-4 py-3 hover:bg-gray-50 transition">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-semibold">Diskusi Metodologi</p>
+                                    <p class="text-sm text-gray-600">5 Des 2024 - 09:00</p>
+                                    <p class="text-sm text-gray-500">Dosen: Dr. Ahmad</p>
+                                </div>
+                                <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-semibold">
+                                    Selesai
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifikasi Page -->
+        <div id="notifikasi-page" class="page-content hidden">
+            <div class="p-6">
+                <button onclick="showPage('dashboard')" class="mb-4 text-blue-600 hover:text-blue-800 flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i> Kembali ke Dashboard
+                </button>
+                
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-2xl font-bold mb-6">Notifikasi</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="border rounded-lg p-4 hover:shadow-md transition">
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2 rounded-full bg-green-100">
+                                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-semibold">Booking Disetujui</p>
+                                    <p class="text-sm text-gray-600">Booking bimbingan Anda untuk 12 Des 2024 telah disetujui</p>
+                                    <p class="text-xs text-gray-400 mt-1">2 jam lalu</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-lg p-4 hover:shadow-md transition">
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2 rounded-full bg-yellow-100">
+                                    <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-semibold">Menunggu Persetujuan</p>
+                                    <p class="text-sm text-gray-600">Booking bimbingan Anda menunggu persetujuan dosen</p>
+                                    <p class="text-xs text-gray-400 mt-1">1 hari lalu</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg md:hidden">
+        <div class="flex justify-around py-3">
+            <button onclick="showPage('dashboard')" class="nav-item flex flex-col items-center text-blue-600">
+                <i class="fas fa-home text-2xl"></i>
+                <span class="text-xs mt-1">Home</span>
+            </button>
+            
+            <button onclick="showPage('booking')" class="nav-item flex flex-col items-center text-gray-600">
+                <i class="fas fa-calendar-plus text-2xl"></i>
+                <span class="text-xs mt-1">Booking</span>
+            </button>
+            
+            <button onclick="showPage('scan')" class="nav-item flex flex-col items-center text-gray-600">
+                <i class="fas fa-qrcode text-2xl"></i>
+                <span class="text-xs mt-1">Scan</span>
+            </button>
+            
+            <button onclick="showPage('riwayat')" class="nav-item flex flex-col items-center text-gray-600">
+                <i class="fas fa-list text-2xl"></i>
+                <span class="text-xs mt-1">Riwayat</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        let html5QrCode = null;
+        let isScanning = false;
+
+        // Function to show different pages
+        function showPage(pageName) {
+            // Stop scanner if leaving scan page
+            if (isScanning && pageName !== 'scan') {
+                stopQRScanner();
+            }
+            
+            // Hide all pages
+            const pages = document.querySelectorAll('.page-content');
+            pages.forEach(page => page.classList.add('hidden'));
+            
+            // Show selected page
+            document.getElementById(pageName + '-page').classList.remove('hidden');
+            
+            // Update navigation active state
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.classList.remove('text-blue-600');
+                item.classList.add('text-gray-600');
+            });
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        // Submit Booking
+        function submitBooking() {
+            const topik = document.getElementById('topik').value;
+            const deskripsi = document.getElementById('deskripsi').value;
+            const tanggal = document.getElementById('tanggal').value;
+            const waktu = document.getElementById('waktu').value;
+            
+            if (!topik || !deskripsi || !tanggal || !waktu) {
+                alert('Harap lengkapi semua field!');
+                return;
+            }
+            
+            alert('Booking berhasil dikirim! Menunggu persetujuan dosen.');
+            
+            // Reset form
+            document.getElementById('topik').value = '';
+            document.getElementById('deskripsi').value = '';
+            document.getElementById('tanggal').value = '';
+            document.getElementById('waktu').value = '';
+            
+            // Back to dashboard
+            showPage('dashboard');
+        }
+
+        // Start QR Scanner
+        function startQRScanner() {
+            document.getElementById('qr-reader-placeholder').classList.add('hidden');
+            document.getElementById('qr-reader').classList.remove('hidden');
+            
+            html5QrCode = new Html5Qrcode("qr-reader");
+            
+            const config = { 
+                fps: 10, 
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            };
+            
+            html5QrCode.start(
+                { facingMode: "environment" }, // Use back camera
+                config,
+                onScanSuccess,
+                onScanError
+            ).then(() => {
+                isScanning = true;
+                console.log("QR Code scanner started");
+            }).catch(err => {
+                console.error("Unable to start scanning", err);
+                alert("Gagal membuka kamera. Pastikan Anda memberikan izin akses kamera.");
+                document.getElementById('qr-reader').classList.add('hidden');
+                document.getElementById('qr-reader-placeholder').classList.remove('hidden');
+            });
+        }
+
+        // Stop QR Scanner
+        function stopQRScanner() {
+            if (html5QrCode && isScanning) {
+                html5QrCode.stop().then(() => {
+                    isScanning = false;
+                    html5QrCode.clear();
+                    console.log("QR Code scanner stopped");
+                }).catch(err => {
+                    console.error("Error stopping scanner", err);
+                });
+            }
+        }
+
+        // On Scan Success
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log(`QR Code detected: ${decodedText}`);
+            
+            // Stop scanner
+            stopQRScanner();
+            
+            // Hide scanner area
+            document.getElementById('scan-area').classList.add('hidden');
+            document.getElementById('qr-reader').classList.add('hidden');
+            
+            // Display result
+            const waktuScan = new Date().toLocaleString('id-ID');
+            document.getElementById('waktu-scan').textContent = waktuScan;
+            document.getElementById('qr-data').textContent = decodedText;
+            
+            // Parse QR data if it's JSON (optional)
+            try {
+                const qrData = JSON.parse(decodedText);
+                document.getElementById('dosen-name').textContent = qrData.dosen || 'Dr. Ahmad';
+            } catch (e) {
+                // If not JSON, just display as text
+                document.getElementById('dosen-name').textContent = 'Dr. Ahmad';
+            }
+            
+            document.getElementById('scan-result').classList.remove('hidden');
+        }
+
+        // On Scan Error (ignore, happens frequently)
+        function onScanError(errorMessage) {
+            // Ignore errors, they happen when QR code is not in view
+        }
+
+        // Reset Scanner
+        function resetScanner() {
+            document.getElementById('scan-result').classList.add('hidden');
+            document.getElementById('scan-area').classList.remove('hidden');
+            document.getElementById('qr-reader-placeholder').classList.remove('hidden');
+            document.getElementById('qr-reader').classList.add('hidden');
+        }
+
+        // Check In
+        function checkIn() {
+            alert('Check-in berhasil! Bimbingan dapat dimulai.');
+            resetScanner();
+            showPage('dashboard');
+        }
+    </script>
+
+</body>
+</html>
