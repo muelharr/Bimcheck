@@ -168,13 +168,47 @@
                     
                     <div id="scan-area" class="text-center">
                         <!-- QR Code Scanner -->
-                        <div id="qr-reader" class="mb-4"></div>
+                        <div id="qr-reader" class="mb-4 hidden"></div>
                         <div id="qr-reader-placeholder" class="bg-gray-100 rounded-lg p-12 mb-6">
                             <i class="fas fa-camera text-gray-400 text-9xl mb-4"></i>
                             <p class="text-gray-600 mb-4">Scan QR Code dari dosen untuk check-in</p>
-                            <button onclick="startQRScanner()" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-semibold">
-                                <i class="fas fa-camera mr-2"></i> Buka Kamera
-                            </button>
+                            
+                            <div class="space-y-3">
+                                <button onclick="startQRScanner()" class="w-full bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-semibold">
+                                    <i class="fas fa-camera mr-2"></i> Buka Kamera
+                                </button>
+                                
+                                <button onclick="testCamera()" class="w-full bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                                    <i class="fas fa-check-circle mr-2"></i> Test Kamera (Debug)
+                                </button>
+                            </div>
+                            
+                            <!-- Camera info -->
+                            <div id="camera-info" class="hidden mt-4 p-4 bg-blue-50 rounded-lg text-left text-sm">
+                                <p class="font-semibold text-blue-900 mb-2">Informasi Kamera:</p>
+                                <div id="camera-list" class="text-blue-700"></div>
+                            </div>
+                            
+                            <!-- Loading indicator -->
+                            <div id="loading-camera" class="hidden mt-4">
+                                <i class="fas fa-spinner fa-spin text-blue-600 text-3xl"></i>
+                                <p class="text-gray-600 mt-2">Membuka kamera...</p>
+                            </div>
+                            
+                            <!-- Error message -->
+                            <div id="camera-error" class="hidden mt-4 p-4 bg-red-50 rounded-lg text-left">
+                                <p class="text-red-700 font-semibold mb-2">⚠️ Gagal membuka kamera</p>
+                                <p class="text-sm text-red-600" id="error-message"></p>
+                                <ul class="text-xs text-red-600 mt-2 list-disc list-inside">
+                                    <li>Pastikan browser memiliki izin akses kamera</li>
+                                    <li>Gunakan browser Chrome atau Safari</li>
+                                    <li>Akses harus via HTTPS (bukan HTTP)</li>
+                                    <li>Tutup aplikasi lain yang menggunakan kamera</li>
+                                </ul>
+                                <button onclick="resetCameraUI()" class="mt-3 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm">
+                                    Coba Lagi
+                                </button>
+                            </div>
                         </div>
                         
                         <p class="text-sm text-gray-500 mt-4">
@@ -182,6 +216,9 @@
                         </p>
                         <p class="text-sm text-gray-500">
                             * Izinkan akses kamera saat diminta browser
+                        </p>
+                        <p class="text-sm text-blue-600 mt-2">
+                            📱 Gunakan Chrome atau Safari untuk hasil terbaik
                         </p>
                     </div>
 
@@ -427,10 +464,54 @@
             showPage('dashboard');
         }
 
+        // Test Camera (Debug Function)
+        function testCamera() {
+            document.getElementById('camera-info').classList.remove('hidden');
+            document.getElementById('camera-error').classList.add('hidden');
+            const cameraList = document.getElementById('camera-list');
+            
+            // Check if getUserMedia is supported
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                cameraList.innerHTML = '❌ Browser tidak support akses kamera (getUserMedia tidak tersedia)';
+                return;
+            }
+            
+            cameraList.innerHTML = '✅ Browser support akses kamera<br>🔄 Mencari kamera...';
+            
+            // Try to get cameras
+            Html5Qrcode.getCameras().then(cameras => {
+                if (cameras && cameras.length) {
+                    let html = `✅ Ditemukan ${cameras.length} kamera:<br><ul class="list-disc list-inside ml-2 mt-1">`;
+                    cameras.forEach((cam, idx) => {
+                        html += `<li>${idx + 1}. ${cam.label || 'Camera ' + (idx + 1)} (ID: ${cam.id.substring(0, 20)}...)</li>`;
+                    });
+                    html += '</ul>';
+                    cameraList.innerHTML = html;
+                } else {
+                    cameraList.innerHTML = '❌ Tidak ada kamera yang terdeteksi';
+                }
+            }).catch(err => {
+                cameraList.innerHTML = `❌ Error: ${err.message}<br><br>Kemungkinan:<br>- Izin kamera belum diberikan<br>- Kamera sedang dipakai aplikasi lain<br>- Koneksi bukan HTTPS`;
+            });
+        }
+        
+        // Reset Camera UI
+        function resetCameraUI() {
+            document.getElementById('camera-error').classList.add('hidden');
+            document.getElementById('loading-camera').classList.add('hidden');
+            document.getElementById('camera-info').classList.add('hidden');
+            document.getElementById('qr-reader').classList.add('hidden');
+        }
+
         // Start QR Scanner
         function startQRScanner() {
-            document.getElementById('qr-reader-placeholder').classList.add('hidden');
-            document.getElementById('qr-reader').classList.remove('hidden');
+            // Show loading
+            document.getElementById('loading-camera').classList.remove('hidden');
+            document.getElementById('camera-error').classList.add('hidden');
+            document.getElementById('camera-info').classList.add('hidden');
+            
+            // Hide placeholder temporarily
+            const placeholder = document.getElementById('qr-reader-placeholder');
             
             html5QrCode = new Html5Qrcode("qr-reader");
             
@@ -440,20 +521,72 @@
                 aspectRatio: 1.0
             };
             
-            html5QrCode.start(
-                { facingMode: "environment" }, // Use back camera
-                config,
-                onScanSuccess,
-                onScanError
-            ).then(() => {
-                isScanning = true;
-                console.log("QR Code scanner started");
+            // Try to get cameras first
+            Html5Qrcode.getCameras().then(cameras => {
+                if (cameras && cameras.length) {
+                    console.log(`Found ${cameras.length} cameras`);
+                    
+                    // Try back camera first (usually index 0 on mobile)
+                    const cameraId = cameras.length > 1 ? cameras[1].id : cameras[0].id;
+                    
+                    html5QrCode.start(
+                        cameraId,
+                        config,
+                        onScanSuccess,
+                        onScanError
+                    ).then(() => {
+                        isScanning = true;
+                        document.getElementById('loading-camera').classList.add('hidden');
+                        placeholder.classList.add('hidden');
+                        document.getElementById('qr-reader').classList.remove('hidden');
+                        console.log("QR Code scanner started successfully");
+                    }).catch(err => {
+                        handleScannerError(err);
+                    });
+                } else {
+                    handleScannerError(new Error("No cameras found on this device"));
+                }
             }).catch(err => {
-                console.error("Unable to start scanning", err);
-                alert("Gagal membuka kamera. Pastikan Anda memberikan izin akses kamera.");
-                document.getElementById('qr-reader').classList.add('hidden');
-                document.getElementById('qr-reader-placeholder').classList.remove('hidden');
+                // Fallback: try with facingMode if getCameras fails
+                console.log("getCameras failed, trying facingMode...");
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    config,
+                    onScanSuccess,
+                    onScanError
+                ).then(() => {
+                    isScanning = true;
+                    document.getElementById('loading-camera').classList.add('hidden');
+                    placeholder.classList.add('hidden');
+                    document.getElementById('qr-reader').classList.remove('hidden');
+                    console.log("QR Code scanner started with facingMode");
+                }).catch(err2 => {
+                    handleScannerError(err2);
+                });
             });
+        }
+        
+        // Handle Scanner Error
+        function handleScannerError(err) {
+            console.error("Scanner error:", err);
+            document.getElementById('loading-camera').classList.add('hidden');
+            document.getElementById('camera-error').classList.remove('hidden');
+            
+            let errorMsg = err.message || err.toString();
+            
+            // Customize error messages
+            if (errorMsg.includes('Permission')) {
+                errorMsg = "Izin kamera ditolak. Silakan izinkan akses kamera di pengaturan browser.";
+            } else if (errorMsg.includes('NotFound')) {
+                errorMsg = "Kamera tidak ditemukan pada device ini.";
+            } else if (errorMsg.includes('NotReadable')) {
+                errorMsg = "Kamera sedang digunakan aplikasi lain. Tutup aplikasi lain dan coba lagi.";
+            } else if (errorMsg.includes('secure')) {
+                errorMsg = "Halaman harus diakses via HTTPS untuk menggunakan kamera.";
+            }
+            
+            document.getElementById('error-message').textContent = errorMsg;
+            document.getElementById('qr-reader').classList.add('hidden');
         }
 
         // Stop QR Scanner
