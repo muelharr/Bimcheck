@@ -127,9 +127,16 @@
                     </div>
                 </div>
                 <div class="text-center md:text-right animate-slide-in w-full md:w-auto">
-                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-xl px-4 md:px-6 py-2 md:py-3">
-                        <p class="font-bold text-base md:text-lg">Dr. Ahmad Setiawan, M.Kom</p>
-                        <p class="text-xs md:text-sm text-purple-100">Kode Dosen: DSN001</p>
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-xl px-4 md:px-6 py-2 md:py-3 flex items-center justify-between gap-4">
+                        <div>
+                            <p class="font-bold text-base md:text-lg">Dr. Ahmad Setiawan, M.Kom</p>
+                            <p class="text-xs md:text-sm text-purple-100">Kode Dosen: DSN001</p>
+                        </div>
+                        <button onclick="handleLogout()" class="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg p-2 transition duration-300 transform hover:scale-110" title="Logout">
+                            <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -366,6 +373,31 @@
                             <span class="text-sm md:text-base">Selesai Bimbingan</span>
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Logout -->
+    <div id="logoutModal" class="hidden fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-3 md:p-4">
+        <div class="glass-effect rounded-2xl md:rounded-3xl shadow-2xl max-w-md w-full animate-scale-in">
+            <div class="px-4 md:px-6 py-6 md:py-8 text-center">
+                <div class="mb-4 md:mb-6">
+                    <div class="mx-auto flex items-center justify-center h-16 w-16 md:h-20 md:w-20 rounded-full bg-gradient-to-r from-orange-500 to-red-500 shadow-lg">
+                        <svg class="h-10 w-10 md:h-12 md:w-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2 md:mb-3">Konfirmasi Logout</h3>
+                <p class="text-gray-600 mb-6 md:mb-8 text-base md:text-lg">Apakah Anda yakin ingin keluar dari dashboard?</p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="closeLogoutModal()" class="flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 font-bold hover:bg-gray-100 transition duration-300 transform hover:scale-105">
+                        Batal
+                    </button>
+                    <button onclick="confirmLogout()" class="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-105">
+                        Ya, Logout
+                    </button>
                 </div>
             </div>
         </div>
@@ -756,6 +788,27 @@
             if (modal) {
                 modal.remove();
             }
+        }
+
+        // Handle Logout
+        function handleLogout() {
+            document.getElementById('logoutModal').classList.remove('hidden');
+        }
+
+        // Close Logout Modal
+        function closeLogoutModal() {
+            document.getElementById('logoutModal').classList.add('hidden');
+        }
+
+        // Confirm Logout
+        function confirmLogout() {
+            // Clear session data
+            sessionStorage.clear();
+            localStorage.clear();
+            
+            // Redirect to login page
+            alert('✅ Logout berhasil! Terima kasih telah menggunakan BimCheck.');
+            window.location.href = 'login.html';
         }
     </script>
 </body>
