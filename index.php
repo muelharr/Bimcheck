@@ -150,49 +150,76 @@
         </div>
     </section>
 
-    <!-- How It Works -->
+    <!-- How It Works - DUAL VIEW: Workflow + Flowchart -->
     <section class="py-12 sm:py-16 md:py-20 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Section Header -->
             <div class="text-center mb-10 sm:mb-12 md:mb-16">
-                <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2 sm:mb-4">Cara Kerja</h2>
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2 sm:mb-4">Cara Kerja BimCheck</h2>
                 <p class="text-gray-600 text-sm sm:text-base md:text-lg px-4">Proses bimbingan yang sederhana dan efisien</p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-                <div class="text-center">
-                    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold mx-auto mb-3 sm:mb-4">
-                        1
-                    </div>
-                    <h3 class="text-base sm:text-lg font-bold text-gray-800 mb-2">Booking Jadwal</h3>
-                    <p class="text-gray-600 text-xs sm:text-sm px-2">Mahasiswa booking jadwal bimbingan dengan dosen pembimbing</p>
+            <!-- TAB NAVIGATION -->
+            <div class="flex justify-center mb-8 sm:mb-10">
+                <div class="inline-flex rounded-xl bg-white shadow-lg p-1">
+                    <button onclick="showTab('workflow')" id="tab-workflow" class="tab-btn px-4 sm:px-8 py-2 sm:py-3 rounded-lg font-bold text-sm sm:text-base transition-all duration-300 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md">
+                        <i class="fas fa-sitemap mr-2"></i>Workflow
+                    </button>
+                    <button onclick="showTab('flowchart')" id="tab-flowchart" class="tab-btn px-4 sm:px-8 py-2 sm:py-3 rounded-lg font-bold text-sm sm:text-base transition-all duration-300 text-gray-600 hover:bg-gray-100">
+                        <i class="fas fa-project-diagram mr-2"></i>Flowchart Detail
+                    </button>
                 </div>
+            </div>
 
-                <div class="text-center">
-                    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold mx-auto mb-3 sm:mb-4">
-                        2
-                    </div>
-                    <h3 class="text-base sm:text-lg font-bold text-gray-800 mb-2">Dosen Memanggil</h3>
-                    <p class="text-gray-600 text-xs sm:text-sm px-2">Dosen memanggil mahasiswa sesuai urutan antrian</p>
+            <!-- WORKFLOW VIEW (Image) -->
+            <div id="workflow-view" class="transition-opacity duration-300">
+                <div class="flex justify-center">
+                    <img src="uploads/img/Workflow.png" alt="Workflow BimCheck" class="w-full max-w-4xl rounded-2xl shadow-xl">
                 </div>
+            </div>
 
-                <div class="text-center">
-                    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold mx-auto mb-3 sm:mb-4">
-                        3
-                    </div>
-                    <h3 class="text-base sm:text-lg font-bold text-gray-800 mb-2">Scan QR Code</h3>
-                    <p class="text-gray-600 text-xs sm:text-sm px-2">Mahasiswa scan QR Code untuk validasi kehadiran</p>
-                </div>
-
-                <div class="text-center">
-                    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold mx-auto mb-3 sm:mb-4">
-                        4
-                    </div>
-                    <h3 class="text-base sm:text-lg font-bold text-gray-800 mb-2">Bimbingan & Feedback</h3>
-                    <p class="text-gray-600 text-xs sm:text-sm px-2">Proses bimbingan dan dosen memberikan feedback</p>
+            <!-- FLOWCHART VIEW (Image) -->
+            <div id="flowchart-view" class="hidden transition-opacity duration-300">
+                <div class="flex justify-center">
+                    <img src="uploads/img/Flowchart.png" alt="BimCheck Complete Flowchart" class="w-full max-w-4xl rounded-2xl shadow-xl">
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- Tab Switching Script -->
+    <script>
+        function showTab(tabName) {
+            const workflowView = document.getElementById('workflow-view');
+            const flowchartView = document.getElementById('flowchart-view');
+            const workflowTab = document.getElementById('tab-workflow');
+            const flowchartTab = document.getElementById('tab-flowchart');
+
+            if (tabName === 'workflow') {
+                // Show workflow
+                workflowView.classList.remove('hidden');
+                flowchartView.classList.add('hidden');
+                
+                // Style tabs
+                workflowTab.classList.add('bg-gradient-to-r', 'from-purple-600', 'to-indigo-600', 'text-white', 'shadow-md');
+                workflowTab.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                
+                flowchartTab.classList.remove('bg-gradient-to-r', 'from-purple-600', 'to-indigo-600', 'text-white', 'shadow-md');
+                flowchartTab.classList.add('text-gray-600', 'hover:bg-gray-100');
+            } else {
+                // Show flowchart
+                workflowView.classList.add('hidden');
+                flowchartView.classList.remove('hidden');
+                
+                // Style tabs
+                flowchartTab.classList.add('bg-gradient-to-r', 'from-purple-600', 'to-indigo-600', 'text-white', 'shadow-md');
+                flowchartTab.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                
+                workflowTab.classList.remove('bg-gradient-to-r', 'from-purple-600', 'to-indigo-600', 'text-white', 'shadow-md');
+                workflowTab.classList.add('text-gray-600', 'hover:bg-gray-100');
+            }
+        }
+    </script>
 
     <!-- CTA Section -->
     <section class="gradient-bg text-white py-12 sm:py-16">
