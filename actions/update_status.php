@@ -34,9 +34,17 @@ if ($status_baru) {
         $query .= ", waktu_panggil = NOW() ";
     }
     
-    // Jika ada catatan
+    // Jika ada feedback/catatan, simpan dengan format yang jelas
     if (!empty($catatan)) {
-        $query .= ", deskripsi = CONCAT(deskripsi, ' [Catatan: $catatan]') ";
+        // Escape string untuk keamanan
+        $catatan_escaped = mysqli_real_escape_string($conn, $catatan);
+        // Simpan feedback dengan format yang lebih jelas
+        $query .= ", deskripsi = CONCAT(COALESCE(deskripsi, ''), 
+                    CASE 
+                        WHEN deskripsi IS NULL OR deskripsi = '' THEN ''
+                        ELSE '\n\n'
+                    END,
+                    '[Feedback Dosen: ', '$catatan_escaped', ']') ";
     }
     
     $query .= " WHERE id_antrian = '$id_antrian'";

@@ -2,7 +2,7 @@
 session_start();
 include '../config/koneksi.php';
 
-// Cek Login Admin
+// Cek Login Admin (Keamanan)
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'admin') {
     header("location:../views/login.php");
     exit;
@@ -14,7 +14,7 @@ if (isset($_GET['aksi']) && $_GET['aksi'] == 'hapus') {
     $id = $_GET['id'];
 
     if ($type == 'mahasiswa') {
-        // Hapus antrian dulu biar ga error foreign key
+        // Hapus antrian terkait dulu (Biar tidak error foreign key)
         mysqli_query($conn, "DELETE FROM antrian WHERE id_mahasiswa='$id'");
         $query = "DELETE FROM mahasiswa WHERE id_mahasiswa='$id'";
     } elseif ($type == 'dosen') {
@@ -33,20 +33,23 @@ if (isset($_GET['aksi']) && $_GET['aksi'] == 'hapus') {
 
 // === 2. FITUR TAMBAH & EDIT MAHASISWA ===
 if (isset($_POST['simpan_mhs'])) {
-    $aksi = $_POST['aksi']; // 'tambah' atau 'edit'
+    $aksi = $_POST['aksi'];
     $id = $_POST['id_mahasiswa'];
-    $npm = $_POST['npm'];
-    $nama = $_POST['nama'];
-    $prodi = $_POST['prodi'];
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+    $npm = mysqli_real_escape_string($conn, $_POST['npm']);
+    $nama = mysqli_real_escape_string($conn, $_POST['nama']);
+    $prodi = mysqli_real_escape_string($conn, $_POST['prodi']);
+    $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $password_raw = $_POST['password'];
 
     if ($aksi == 'tambah') {
-        $query = "INSERT INTO mahasiswa (npm, nama, prodi, email, password) VALUES ('$npm', '$nama', '$prodi', '$email', '$password')";
+        // ENKRIPSI PASSWORD SAAT TAMBAH
+        $password_hash = password_hash($password_raw, PASSWORD_DEFAULT);
+        $query = "INSERT INTO mahasiswa (npm, nama, prodi, email, password) VALUES ('$npm', '$nama', '$prodi', '$email', '$password_hash')";
     } else {
         $query = "UPDATE mahasiswa SET npm='$npm', nama='$nama', prodi='$prodi', email='$email'";
-        if (!empty($password)) { // Update password cuma kalau diisi
-            $query .= ", password='$password'";
+        if (!empty($password_raw)) { // Update password cuma kalau diisi
+            $password_hash = password_hash($password_raw, PASSWORD_DEFAULT);
+            $query .= ", password='$password_hash'";
         }
         $query .= " WHERE id_mahasiswa='$id'";
     }
@@ -62,17 +65,20 @@ if (isset($_POST['simpan_mhs'])) {
 if (isset($_POST['simpan_dosen'])) {
     $aksi = $_POST['aksi'];
     $id = $_POST['id_dosen'];
-    $kode = $_POST['kode_dosen'];
-    $nama = $_POST['nama_dosen'];
-    $keahlian = $_POST['keahlian'];
-    $password = $_POST['password'];
+    $kode = mysqli_real_escape_string($conn, $_POST['kode_dosen']);
+    $nama = mysqli_real_escape_string($conn, $_POST['nama_dosen']);
+    $keahlian = mysqli_real_escape_string($conn, $_POST['keahlian']);
+    $password_raw = $_POST['password'];
 
     if ($aksi == 'tambah') {
-        $query = "INSERT INTO dosen (kode_dosen, nama_dosen, keahlian, password) VALUES ('$kode', '$nama', '$keahlian', '$password')";
+        // ENKRIPSI PASSWORD SAAT TAMBAH (PENTING!)
+        $password_hash = password_hash($password_raw, PASSWORD_DEFAULT);
+        $query = "INSERT INTO dosen (kode_dosen, nama_dosen, keahlian, password) VALUES ('$kode', '$nama', '$keahlian', '$password_hash')";
     } else {
         $query = "UPDATE dosen SET kode_dosen='$kode', nama_dosen='$nama', keahlian='$keahlian'";
-        if (!empty($password)) {
-            $query .= ", password='$password'";
+        if (!empty($password_raw)) {
+            $password_hash = password_hash($password_raw, PASSWORD_DEFAULT);
+            $query .= ", password='$password_hash'";
         }
         $query .= " WHERE id_dosen='$id'";
     }

@@ -90,11 +90,28 @@ $qHistory = mysqli_query($conn, "
     
     <header class="bg-white shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold text-blue-600">BimCheck</h1>
+            <a href="../index.php" class="flex items-center gap-3 hover:opacity-80 transition-opacity group">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-2 rounded-lg shadow-md group-hover:shadow-lg transition-shadow">
+                    <i class="fas fa-shield-alt text-white text-lg sm:text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-blue-600 group-hover:text-indigo-600 transition-colors">BimCheck</h1>
+            </a>
             <div class="flex items-center space-x-4">
-                <div class="text-right hidden md:block">
-                    <p class="text-sm font-bold text-gray-700"><?php echo $mhs['nama']; ?></p>
-                    <p class="text-xs text-gray-500"><?php echo $mhs['prodi']; ?></p>
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <?php 
+                        $foto_profil = !empty($mhs['foto_profil']) ? '../' . $mhs['foto_profil'] : 'https://ui-avatars.com/api/?name=' . urlencode($mhs['nama']) . '&background=3b82f6&color=fff&size=128&bold=true';
+                        ?>
+                        <img src="<?php echo $foto_profil; ?>" alt="Foto Profil" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-blue-500 shadow-md object-cover">
+                        <label for="uploadFotoMhs" class="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1.5 cursor-pointer hover:bg-blue-700 transition shadow-lg">
+                            <i class="fas fa-camera text-xs"></i>
+                        </label>
+                        <input type="file" id="uploadFotoMhs" accept="image/*" class="hidden" onchange="uploadFoto('mahasiswa')">
+                    </div>
+                    <div class="text-right hidden md:block">
+                        <p class="text-sm font-bold text-gray-700"><?php echo $mhs['nama']; ?></p>
+                        <p class="text-xs text-gray-500"><?php echo $mhs['prodi']; ?></p>
+                    </div>
                 </div>
                 <a href="../actions/logout.php" onclick="return confirm('Logout?')" class="text-red-600">
                     <i class="fas fa-sign-out-alt text-xl"></i>
@@ -114,7 +131,7 @@ $qHistory = mysqli_query($conn, "
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 <button onclick="showPage('booking')" class="bg-white p-5 rounded-xl shadow-sm border hover:border-blue-500 hover:shadow-md transition text-left flex items-center space-x-4">
                     <div class="bg-blue-100 p-3 rounded-lg text-blue-600"><i class="fas fa-calendar-plus text-2xl"></i></div>
-                    <div><h3 class="font-bold text-gray-800">Booking Bimbingan</h3><p class="text-sm text-gray-500">Ajukan jadwal baru</p></div>
+                    <div><h3 class="font-bold text-gray-800">Booking Pertemuan</h3><p class="text-sm text-gray-500">Ajukan jadwal baru</p></div>
                 </button>
                 <button onclick="showPage('scan')" class="bg-white p-5 rounded-xl shadow-sm border hover:border-green-500 hover:shadow-md transition text-left flex items-center space-x-4">
                     <div class="bg-green-100 p-3 rounded-lg text-green-600"><i class="fas fa-qrcode text-2xl"></i></div>
@@ -340,6 +357,53 @@ $qHistory = mysqli_query($conn, "
             .catch(err => {
                 console.error(err);
                 alert("Terjadi kesalahan koneksi server.");
+            });
+        }
+
+        // Upload Foto Profil
+        function uploadFoto(role) {
+            const inputId = role === 'dosen' ? 'uploadFotoDosen' : 'uploadFotoMhs';
+            const fileInput = document.getElementById(inputId);
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+            
+            // Validasi ukuran (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Ukuran file terlalu besar. Maksimal 2MB');
+                fileInput.value = '';
+                return;
+            }
+            
+            // Validasi tipe file
+            if (!file.type.match('image.*')) {
+                alert('Format file tidak didukung. Gunakan gambar (JPG, PNG, GIF)');
+                fileInput.value = '';
+                return;
+            }
+            
+            // Upload menggunakan FormData
+            const formData = new FormData();
+            formData.append('foto', file);
+            
+            fetch('../actions/upload_foto.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('✅ Foto profil berhasil diupload!');
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                    fileInput.value = '';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Terjadi kesalahan saat mengupload foto');
+                fileInput.value = '';
             });
         }
     </script>

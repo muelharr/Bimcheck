@@ -64,21 +64,33 @@ $qAntrian = mysqli_query($conn, "
         
         <div class="glass-header rounded-2xl p-6 text-white mb-8 shadow-lg flex justify-between items-center relative overflow-hidden">
             <div class="relative z-10">
-                <div class="flex items-center gap-3">
-                    <div class="bg-white/20 p-2 rounded-lg">
+                <a href="../index.php" class="flex items-center gap-3 hover:opacity-90 transition-opacity group">
+                    <div class="bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition">
                         <i class="fas fa-shield-alt text-2xl"></i>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold">BimCheck Dashboard</h1>
+                        <h1 class="text-2xl font-bold group-hover:text-purple-200 transition-colors">BimCheck Dashboard</h1>
                         <p class="text-purple-100 text-sm">Sistem Antrian Bimbingan Digital</p>
                     </div>
-                </div>
+                </a>
             </div>
             
             <div class="relative z-10 flex items-center gap-4">
-                <div class="text-right">
-                    <p class="font-bold"><?php echo $dosen['nama_dosen']; ?></p>
-                    <p class="text-xs text-purple-200">Kode: <?php echo $dosen['kode_dosen']; ?></p>
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <?php 
+                        $foto_profil = !empty($dosen['foto_profil']) ? '../' . $dosen['foto_profil'] : 'https://ui-avatars.com/api/?name=' . urlencode($dosen['nama_dosen']) . '&background=667eea&color=fff&size=128&bold=true';
+                        ?>
+                        <img src="<?php echo $foto_profil; ?>" alt="Foto Profil" class="w-12 h-12 rounded-full border-2 border-white shadow-lg object-cover">
+                        <label for="uploadFotoDosen" class="absolute bottom-0 right-0 bg-purple-600 text-white rounded-full p-1.5 cursor-pointer hover:bg-purple-700 transition shadow-lg">
+                            <i class="fas fa-camera text-xs"></i>
+                        </label>
+                        <input type="file" id="uploadFotoDosen" accept="image/*" class="hidden" onchange="uploadFoto('dosen')">
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold"><?php echo $dosen['nama_dosen']; ?></p>
+                        <p class="text-xs text-purple-200">Kode: <?php echo $dosen['kode_dosen']; ?></p>
+                    </div>
                 </div>
                 <a href="../actions/logout.php" onclick="return confirm('Keluar?')" class="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition">
                     <i class="fas fa-sign-out-alt"></i>
@@ -257,30 +269,35 @@ $qAntrian = mysqli_query($conn, "
 
     <div id="modalSelesai" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-0 overflow-hidden transform scale-100 transition-transform">
-            <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h3 class="text-lg font-bold text-gray-800">Selesaikan Bimbingan</h3>
-                <button onclick="document.getElementById('modalSelesai').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            <div class="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white flex items-center">
+                    <i class="fas fa-comment-dots mr-2"></i> Berikan Feedback
+                </h3>
+                <button onclick="document.getElementById('modalSelesai').classList.add('hidden')" class="text-white hover:text-gray-200 transition"><i class="fas fa-times"></i></button>
             </div>
             
             <div class="p-6">
-                <p class="text-sm text-gray-500 mb-1">Mahasiswa:</p>
-                <p class="text-lg font-bold text-gray-800 mb-4" id="modalNamaMhs"></p>
+                <div class="mb-4 pb-4 border-b border-gray-100">
+                    <p class="text-xs text-gray-500 mb-1">Mahasiswa:</p>
+                    <p class="text-lg font-bold text-gray-800" id="modalNamaMhs"></p>
+                </div>
                 
                 <input type="hidden" id="modalIdAntrian">
                 
-                <div class="mb-4">
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Catatan Dosen (Opsional)</label>
-                    <textarea id="modalCatatan" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none transition" rows="3" placeholder="Tulis revisi atau catatan..."></textarea>
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">
+                        Feedback Bimbingan <span class="text-red-500">*</span>
+                    </label>
+                    <textarea id="modalCatatan" class="w-full border-2 border-gray-300 rounded-xl p-4 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition" rows="5" placeholder="Tulis feedback untuk mahasiswa..." required></textarea>
+                    <p class="text-xs text-gray-500 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i> Feedback akan tersimpan dan dapat dilihat mahasiswa
+                    </p>
                 </div>
                 
-                <div class="flex gap-3">
-                    <button onclick="kirimStatus('revisi')" class="flex-1 bg-orange-100 text-orange-700 hover:bg-orange-200 px-4 py-3 rounded-xl font-bold text-sm transition">
-                        ⚠️ Perlu Revisi
-                    </button>
-                    <button onclick="kirimStatus('selesai')" class="flex-1 bg-green-600 text-white hover:bg-green-700 px-4 py-3 rounded-xl font-bold text-sm shadow-md transition">
-                        ✅ Selesai
-                    </button>
-                </div>
+                <button onclick="kirimFeedback()" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 px-6 py-3 rounded-xl font-bold text-sm shadow-lg transition transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Selesai & Simpan Feedback</span>
+                </button>
             </div>
         </div>
     </div>
@@ -308,17 +325,50 @@ $qAntrian = mysqli_query($conn, "
         function bukaModalSelesai(id, nama) {
             document.getElementById('modalIdAntrian').value = id;
             document.getElementById('modalNamaMhs').innerText = nama;
+            document.getElementById('modalCatatan').value = ''; // Reset textarea
             document.getElementById('modalSelesai').classList.remove('hidden');
         }
 
-        function kirimStatus(action) {
+        function kirimFeedback() {
             const id = document.getElementById('modalIdAntrian').value;
-            const note = document.getElementById('modalCatatan').value;
+            const feedback = document.getElementById('modalCatatan').value.trim();
+            
+            // Validasi: Feedback wajib diisi
+            if (!feedback) {
+                alert('⚠️ Mohon isi feedback terlebih dahulu!');
+                document.getElementById('modalCatatan').focus();
+                return;
+            }
+            
+            // Deteksi otomatis status berdasarkan isi feedback
+            // Jika feedback mengandung kata kunci revisi, set status revisi
+            const feedbackLower = feedback.toLowerCase();
+            const kataRevisi = ['revisi', 'perlu perbaikan', 'perbaiki', 'kurang', 'belum tepat', 'salah'];
+            const perluRevisi = kataRevisi.some(kata => feedbackLower.includes(kata));
+            
+            // Tentukan action berdasarkan feedback
+            const action = perluRevisi ? 'revisi' : 'selesai';
+            
+            // Kirim ke server
             fetch('../actions/update_status.php', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_antrian: id, action: action, catatan: note })
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    id_antrian: id, 
+                    action: action, 
+                    catatan: feedback 
+                })
             }).then(res => res.json()).then(data => {
-                location.reload();
+                if(data.status === 'success') {
+                    // Tutup modal dan reload
+                    document.getElementById('modalSelesai').classList.add('hidden');
+                    location.reload();
+                } else {
+                    alert('❌ Gagal menyimpan feedback: ' + data.message);
+                }
+            }).catch(err => {
+                console.error(err);
+                alert('❌ Terjadi kesalahan saat menyimpan feedback.');
             });
         }
 
@@ -328,6 +378,53 @@ $qAntrian = mysqli_query($conn, "
             const btn = document.querySelector("button[onclick*='panggil']");
             if(btn) btn.click();
             else alert("Tidak ada antrian menunggu saat ini.");
+        }
+
+        // Upload Foto Profil
+        function uploadFoto(role) {
+            const inputId = role === 'dosen' ? 'uploadFotoDosen' : 'uploadFotoMhs';
+            const fileInput = document.getElementById(inputId);
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+            
+            // Validasi ukuran (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Ukuran file terlalu besar. Maksimal 2MB');
+                fileInput.value = '';
+                return;
+            }
+            
+            // Validasi tipe file
+            if (!file.type.match('image.*')) {
+                alert('Format file tidak didukung. Gunakan gambar (JPG, PNG, GIF)');
+                fileInput.value = '';
+                return;
+            }
+            
+            // Upload menggunakan FormData
+            const formData = new FormData();
+            formData.append('foto', file);
+            
+            fetch('../actions/upload_foto.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('✅ Foto profil berhasil diupload!');
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                    fileInput.value = '';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Terjadi kesalahan saat mengupload foto');
+                fileInput.value = '';
+            });
         }
     </script>
 </body>
