@@ -20,14 +20,30 @@ $qMhs = mysqli_query($conn, "SELECT id_mahasiswa FROM mahasiswa WHERE npm = '$np
 $mhs = mysqli_fetch_assoc($qMhs);
 $id_mahasiswa = $mhs['id_mahasiswa'];
 
-// 4. LOGIKA VALIDASI
-// Kita cek: Apakah mahasiswa ini punya jadwal 'menunggu' atau 'dipanggil' HARI INI?
-// Dan apakah QR yang discan cocok dengan ID Dosen di jadwal tersebut?
+// 4. LOGIKA VALIDASI DENGAN TIME-BASED TOKEN
+// Format QR: "id_dosen|timestamp" dimana timestamp adalah blok 5 menit
+// Contoh: "4|12345678" 
 
-// Asumsi: Isi QR Code adalah ID Dosen (contoh: "1" atau "2")
-// Kita bersihkan dulu datanya biar aman
-$id_dosen_dari_qr = mysqli_real_escape_string($conn, $qr_content); 
+$qr_content_cleaned = mysqli_real_escape_string($conn, $qr_content);
 $tanggal_hari_ini = date('Y-m-d');
+
+// Parse QR Token
+if (strpos($qr_content_cleaned, '|') !== false) {
+    // Format baru: id_dosen|timestamp
+    list($id_dosen_dari_qr, $qr_timestamp) = explode('|', $qr_content_cleaned, 2);
+    
+    // Validasi timestamp: Terima token dalam range ±2 blok (±10 menit)
+    $current_timestamp = floor(time() / (5 * 60)); // Current 5-minute block
+    $time_diff = abs($current_timestamp - intval($qr_timestamp));
+    
+    if ($time_diff > 2) {
+        echo json_encode(['status' => 'error', 'message' => 'QR Code sudah kedaluwarsa. Minta dosen refresh QR Code.']);
+        exit;
+    }
+} else {
+    // Format lama (backward compatibility): hanya id_dosen
+    $id_dosen_dari_qr = $qr_content_cleaned;
+}
 
 $queryCek = "SELECT * FROM antrian 
              WHERE id_mahasiswa = '$id_mahasiswa' 

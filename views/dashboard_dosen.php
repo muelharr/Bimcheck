@@ -2,12 +2,12 @@
 session_start();
 include '../config/koneksi.php';
 
-// 1. LOGIKA OTOMATIS: TIMEOUT 5 MENIT
-// Cek jika ada yang dipanggil > 5 menit, ubah jadi 'dilewati'
+// 1. LOGIKA OTOMATIS: TIMEOUT 60 MENIT (1 JAM)
+// Cek jika ada yang dipanggil > 60 menit, ubah jadi 'dilewati'
 $queryTimeout = "UPDATE antrian 
                  SET status = 'dilewati' 
                  WHERE status = 'dipanggil' 
-                 AND TIMESTAMPDIFF(MINUTE, waktu_panggil, NOW()) >= 5";
+                 AND TIMESTAMPDIFF(MINUTE, waktu_panggil, NOW()) >= 60";
 mysqli_query($conn, $queryTimeout);
 
 // 2. Cek Login
@@ -26,7 +26,7 @@ $id_dosen = $dosen['id_dosen'];
 $qMenunggu = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM antrian WHERE id_dosen='$id_dosen' AND tanggal=CURDATE() AND status='menunggu'"));
 $qProses = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM antrian WHERE id_dosen='$id_dosen' AND tanggal=CURDATE() AND status IN ('dipanggil', 'proses')"));
 $qSelesai = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM antrian WHERE id_dosen='$id_dosen' AND tanggal=CURDATE() AND status='selesai'"));
-$qRevisi = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM antrian WHERE id_dosen='$id_dosen' AND tanggal=CURDATE() AND status='revisi'"));
+
 
 // 5. Ambil Antrian Aktif
 $qAntrian = mysqli_query($conn, "
@@ -37,6 +37,17 @@ $qAntrian = mysqli_query($conn, "
     AND a.tanggal = CURDATE() 
     AND a.status IN ('menunggu', 'dipanggil', 'proses', 'dilewati') 
     ORDER BY FIELD(a.status, 'proses', 'dipanggil', 'menunggu', 'dilewati'), a.nomor_antrian ASC
+");
+
+// 6. Ambil Riwayat Bimbingan
+$qRiwayat = mysqli_query($conn, "
+    SELECT a.*, m.nama, m.npm, m.prodi 
+    FROM antrian a 
+    JOIN mahasiswa m ON a.id_mahasiswa = m.id_mahasiswa 
+    WHERE a.id_dosen = '$id_dosen' 
+    AND a.status IN ('selesai', 'revisi', 'dilewati') 
+    ORDER BY a.tanggal DESC, a.id_antrian DESC
+    LIMIT 20
 ");
 ?>
 
@@ -101,7 +112,7 @@ $qAntrian = mysqli_query($conn, "
             <div class="absolute bottom-0 left-0 -ml-10 -mb-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="bg-white p-5 rounded-2xl shadow-sm flex justify-between items-center">
                 <div>
                     <p class="text-xs font-bold text-gray-400 uppercase">Total Antrian</p>
@@ -132,15 +143,7 @@ $qAntrian = mysqli_query($conn, "
                 </div>
             </div>
 
-            <div class="bg-white p-5 rounded-2xl shadow-sm flex justify-between items-center">
-                <div>
-                    <p class="text-xs font-bold text-gray-400 uppercase">Perlu Revisi</p>
-                    <h3 class="text-3xl font-bold text-gray-800 mt-1"><?php echo $qRevisi['total']; ?></h3>
-                </div>
-                <div class="p-3 bg-orange-500 text-white rounded-xl shadow-lg shadow-orange-200">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-            </div>
+
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -176,6 +179,7 @@ $qAntrian = mysqli_query($conn, "
                                     <th class="px-6 py-4 font-bold">Topik</th>
                                     <th class="px-6 py-4 font-bold">Status</th>
                                     <th class="px-6 py-4 font-bold text-center">Aksi</th>
+                                    <th class="px-6 py-4 font-bold text-center">Detail</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 text-sm">
@@ -210,7 +214,7 @@ $qAntrian = mysqli_query($conn, "
                                                 <i class="far fa-clock"></i> 
                                                 <?php echo date('H:i', strtotime($row['waktu_panggil'])); ?> WIB
                                                 <div class="text-red-500 font-bold mt-0.5">
-                                                    Batas: <?php echo date('H:i', strtotime($row['waktu_panggil'] . ' +5 minutes')); ?>
+                                                    Batas: <?php echo date('H:i', strtotime($row['waktu_panggil'] . ' +60 minutes')); ?>
                                                 </div>
                                             </div>
                                         <?php } ?>
@@ -236,9 +240,86 @@ $qAntrian = mysqli_query($conn, "
                                             </button>
                                         <?php } ?>
                                     </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button onclick='openDetailModal(<?php echo json_encode($row); ?>)' class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                                            <i class="fas fa-info-circle"></i> Detail
+                                        </button>
+                                    </td>
                                 </tr>
                                 <?php } } else { ?>
-                                    <tr><td colspan="5" class="px-6 py-10 text-center text-gray-400 italic">Belum ada antrian.</td></tr>
+                                    <tr><td colspan="6" class="px-6 py-10 text-center text-gray-400 italic">Belum ada antrian.</td></tr>
+                                <?php } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 mt-6">
+                    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4">
+                        <h3 class="text-white font-bold flex items-center">
+                            <i class="fas fa-history mr-2"></i> Riwayat Bimbingan Terakhir
+                        </h3>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
+                                <tr>
+                                    <th class="px-6 py-4 font-bold">Tanggal</th>
+                                    <th class="px-6 py-4 font-bold">Mahasiswa</th>
+                                    <th class="px-6 py-4 font-bold">Topik</th>
+                                    <th class="px-6 py-4 font-bold">Status</th>
+                                    <th class="px-6 py-4 font-bold">Feedback</th>
+                                    <th class="px-6 py-4 font-bold text-center">Detail</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 text-sm">
+                                <?php if(mysqli_num_rows($qRiwayat) > 0) { 
+                                    while($row = mysqli_fetch_assoc($qRiwayat)) { 
+                                        $status = $row['status'];
+                                        $badgeClass = 'bg-gray-100 text-gray-600';
+                                        
+                                        if($status == 'selesai') $badgeClass = 'bg-green-100 text-green-700';
+                                        if($status == 'revisi') $badgeClass = 'bg-orange-100 text-orange-700';
+                                        if($status == 'dilewati') $badgeClass = 'bg-red-100 text-red-700';
+                                        
+                                        // Extract feedback from deskripsi
+                                        $feedback = '-';
+                                        if (!empty($row['deskripsi'])) {
+                                            // Check if there's feedback in the format [Feedback Dosen: ...]
+                                            if (preg_match('/\[Feedback Dosen: (.*?)\]/', $row['deskripsi'], $matches)) {
+                                                $feedback = $matches[1];
+                                            }
+                                        }
+                                ?>
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-6 py-4">
+                                        <p class="font-medium text-gray-800"><?php echo date('d M Y', strtotime($row['tanggal'])); ?></p>
+                                        <p class="text-xs text-gray-500"><?php echo date('H:i', strtotime($row['waktu_mulai'])); ?> WIB</p>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="font-bold text-gray-800"><?php echo $row['nama']; ?></p>
+                                        <p class="text-xs text-gray-500"><?php echo $row['npm']; ?></p>
+                                    </td>
+                                    <td class="px-6 py-4 text-gray-600"><?php echo $row['topik']; ?></td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase <?php echo $badgeClass; ?>">
+                                            <?php echo $status; ?>
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="text-xs text-gray-600 max-w-xs truncate" title="<?php echo htmlspecialchars($feedback); ?>">
+                                            <?php echo htmlspecialchars($feedback); ?>
+                                        </p>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button onclick='openDetailModal(<?php echo json_encode($row); ?>)' class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                                            <i class="fas fa-info-circle"></i> Detail
+                                        </button>
+                                    </td>
+                                </tr>
+                                <?php } } else { ?>
+                                    <tr><td colspan="6" class="px-6 py-10 text-center text-gray-400 italic">Belum ada riwayat bimbingan.</td></tr>
                                 <?php } ?>
                             </tbody>
                         </table>
@@ -255,6 +336,15 @@ $qAntrian = mysqli_query($conn, "
                     <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 mb-4 flex justify-center bg-gray-50">
                         <div id="qrcode"></div>
                     </div>
+                    
+                    <div class="mb-3 flex items-center justify-center gap-2 text-xs text-gray-600">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>QR otomatis refresh dalam: <strong id="qrTimer" class="text-purple-600">5:00</strong></span>
+                    </div>
+                    
+                    <button onclick="regenerateQR()" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md transition mb-3 flex items-center justify-center gap-2">
+                        <i class="fas fa-redo-alt"></i> Refresh QR Manual
+                    </button>
                     
                     <div class="bg-purple-50 text-purple-700 p-3 rounded-lg text-xs font-medium">
                         <i class="fas fa-info-circle mr-1"></i> Tunjukkan QR ini ke mahasiswa untuk memulai bimbingan.
@@ -286,9 +376,9 @@ $qAntrian = mysqli_query($conn, "
                 
                 <div class="mb-6">
                     <label class="block text-sm font-bold text-gray-700 mb-2">
-                        Feedback Bimbingan <span class="text-red-500">*</span>
+                        Feedback Bimbingan <span class="text-gray-400 text-xs">(Opsional)</span>
                     </label>
-                    <textarea id="modalCatatan" class="w-full border-2 border-gray-300 rounded-xl p-4 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition" rows="5" placeholder="Tulis feedback untuk mahasiswa..." required></textarea>
+                    <textarea id="modalCatatan" class="w-full border-2 border-gray-300 rounded-xl p-4 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition" rows="5" placeholder="Tulis feedback untuk mahasiswa (opsional)..."></textarea>
                     <p class="text-xs text-gray-500 mt-2">
                         <i class="fas fa-info-circle mr-1"></i> Feedback akan tersimpan dan dapat dilihat mahasiswa
                     </p>
@@ -302,13 +392,172 @@ $qAntrian = mysqli_query($conn, "
         </div>
     </div>
 
+    <!-- Detail Modal -->
+    <div id="detailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm" onclick="closeDetailModal(event)">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-0 overflow-hidden transform scale-100 transition-transform m-4" onclick="event.stopPropagation()">
+            <div class="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i> Detail Booking Bimbingan
+                </h3>
+                <button onclick="closeDetailModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 max-h-[70vh] overflow-y-auto">
+                <!-- Nomor Antrian -->
+                <div class="mb-4 pb-4 border-b border-gray-200">
+                    <p class="text-xs text-gray-500 mb-1">Nomor Antrian:</p>
+                    <p class="text-2xl font-bold text-purple-600" id="detailNomorAntrian"></p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <!-- Mahasiswa -->
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1"><i class="fas fa-user-graduate mr-1"></i> Mahasiswa:</p>
+                        <p class="font-bold text-gray-800" id="detailMahasiswa"></p>
+                        <p class="text-xs text-gray-600" id="detailNPM"></p>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1"><i class="fas fa-flag mr-1"></i> Status:</p>
+                        <span id="detailStatus" class="px-3 py-1 rounded-lg text-sm font-bold uppercase inline-block"></span>
+                    </div>
+                </div>
+                
+                <!-- Topik -->
+                <div class="mb-4">
+                    <p class="text-xs text-gray-500 mb-1"><i class="fas fa-book mr-1"></i> Topik Bimbingan:</p>
+                    <p class="font-bold text-gray-800 text-lg" id="detailTopik"></p>
+                </div>
+                
+                <!-- Deskripsi -->
+                <div class="mb-4">
+                    <p class="text-xs text-gray-500 mb-2"><i class="fas fa-align-left mr-1"></i> Deskripsi:</p>
+                    <div class="text-gray-700 bg-gray-50 border border-gray-200 p-4 rounded-lg leading-relaxed" id="detailDeskripsi"></div>
+                </div>
+                
+                <!-- Feedback Dosen (if exists) -->
+                <div id="detailFeedbackContainer" class="hidden mb-4">
+                    <p class="text-xs text-gray-500 mb-2"><i class="fas fa-comment-dots mr-1"></i> Feedback yang Diberikan:</p>
+                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-500 p-4 rounded-lg">
+                        <div class="flex items-start gap-3">
+                            <div class="bg-purple-500 text-white p-2 rounded-lg flex-shrink-0">
+                                <i class="fas fa-comment-medical"></i>
+                            </div>
+                            <div class="flex-1 text-gray-800 leading-relaxed" id="detailFeedbackContent"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tanggal & Waktu -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1"><i class="far fa-calendar mr-1"></i> Tanggal:</p>
+                        <p class="font-semibold text-gray-800" id="detailTanggal"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1"><i class="far fa-clock mr-1"></i> Waktu Mulai:</p>
+                        <p class="font-semibold text-gray-800" id="detailWaktu"></p>
+                    </div>
+                </div>
+                
+                <!-- File Dokumen -->
+                <div id="detailFileContainer" class="hidden">
+                    <p class="text-xs text-gray-500 mb-2"><i class="fas fa-file-alt mr-1"></i> Dokumen Terlampir:</p>
+                    <a id="detailFileLink" href="#" target="_blank" class="flex items-center gap-3 p-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition">
+                        <div class="bg-purple-600 text-white p-3 rounded-lg">
+                            <i id="detailFileIcon" class="fas fa-file-pdf text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-semibold text-purple-700" id="detailFileName"></p>
+                            <p class="text-xs text-gray-500">Klik untuk membuka/download</p>
+                        </div>
+                        <i class="fas fa-external-link-alt text-purple-600"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // 1. Generate QR Code
+        // 1. QR Code Generation with Time-Based Token
         const idDosen = document.getElementById('idDosenVal').value;
-        new QRCode(document.getElementById("qrcode"), {
-            text: idDosen, width: 140, height: 140,
-            colorDark : "#4c1d95", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
-        });
+        let qrCodeInstance = null;
+        let countdownInterval = null;
+        let autoRefreshInterval = null;
+        
+        // Generate QR Code with timestamp
+        function generateQRCode() {
+            // Create token: idDosen|timestamp (rounded to nearest 5 minutes)
+            const now = new Date();
+            const timestamp = Math.floor(now.getTime() / (5 * 60 * 1000)); // 5-minute blocks
+            const qrToken = `${idDosen}|${timestamp}`;
+            
+            // Clear existing QR code
+            const qrContainer = document.getElementById("qrcode");
+            qrContainer.innerHTML = '';
+            
+            // Generate new QR code
+            qrCodeInstance = new QRCode(qrContainer, {
+                text: qrToken, 
+                width: 140, 
+                height: 140,
+                colorDark: "#4c1d95", 
+                colorLight: "#ffffff", 
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            console.log('QR Generated:', qrToken);
+        }
+        
+        // Countdown timer function
+        function startCountdown() {
+            let secondsLeft = 300; // 5 minutes = 300 seconds
+            
+            // Clear existing interval
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            countdownInterval = setInterval(() => {
+                secondsLeft--;
+                
+                const minutes = Math.floor(secondsLeft / 60);
+                const seconds = secondsLeft % 60;
+                const display = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                document.getElementById('qrTimer').textContent = display;
+                
+                if (secondsLeft <= 0) {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+        }
+        
+        // Auto-refresh QR every 5 minutes
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            
+            autoRefreshInterval = setInterval(() => {
+                generateQRCode();
+                startCountdown();
+            }, 300000); // 5 minutes = 300000ms
+        }
+        
+        // Manual regenerate function
+        function regenerateQR() {
+            generateQRCode();
+            startCountdown();
+            
+            // Restart auto-refresh timer
+            startAutoRefresh();
+        }
+        
+        // Initialize on page load
+        generateQRCode();
+        startCountdown();
+        startAutoRefresh();
+
 
         // 2. Fungsi Panggil
         function updateStatus(id, action) {
@@ -333,21 +582,8 @@ $qAntrian = mysqli_query($conn, "
             const id = document.getElementById('modalIdAntrian').value;
             const feedback = document.getElementById('modalCatatan').value.trim();
             
-            // Validasi: Feedback wajib diisi
-            if (!feedback) {
-                alert('⚠️ Mohon isi feedback terlebih dahulu!');
-                document.getElementById('modalCatatan').focus();
-                return;
-            }
-            
-            // Deteksi otomatis status berdasarkan isi feedback
-            // Jika feedback mengandung kata kunci revisi, set status revisi
-            const feedbackLower = feedback.toLowerCase();
-            const kataRevisi = ['revisi', 'perlu perbaikan', 'perbaiki', 'kurang', 'belum tepat', 'salah'];
-            const perluRevisi = kataRevisi.some(kata => feedbackLower.includes(kata));
-            
-            // Tentukan action berdasarkan feedback
-            const action = perluRevisi ? 'revisi' : 'selesai';
+            // Feedback bersifat opsional, langsung set status = selesai
+            const action = 'selesai';
             
             // Kirim ke server
             fetch('../actions/update_status.php', {
@@ -425,6 +661,118 @@ $qAntrian = mysqli_query($conn, "
                 alert('❌ Terjadi kesalahan saat mengupload foto');
                 fileInput.value = '';
             });
+        }
+
+        // --- DETAIL MODAL FUNCTIONS ---
+        function openDetailModal(data) {
+            // Populate modal with data
+            document.getElementById('detailNomorAntrian').textContent = 'A' + String(data.nomor_antrian).padStart(3, '0');
+            document.getElementById('detailMahasiswa').textContent = data.nama || '-';
+            document.getElementById('detailNPM').textContent = 'NPM: ' + (data.npm || '-');
+            document.getElementById('detailTopik').textContent = data.topik || '-';
+            
+            // Parse deskripsi and feedback
+            let deskripsi = data.deskripsi || '-';
+            let feedback = null;
+            
+            // Check if there's feedback in the format [Feedback Dosen: ...]
+            const feedbackMatch = deskripsi.match(/\[Feedback Dosen: (.*?)\]/);
+            if (feedbackMatch) {
+                feedback = feedbackMatch[1];
+                // Remove feedback from deskripsi
+                deskripsi = deskripsi.replace(/\[Feedback Dosen: .*?\]/, '').trim();
+            }
+            
+            // Display deskripsi
+            const deskripsiEl = document.getElementById('detailDeskripsi');
+            if (deskripsi && deskripsi !== '-' && deskripsi !== '') {
+                deskripsiEl.innerHTML = deskripsi.split('\n').map(line => 
+                    `<p class="mb-1">${line || '&nbsp;'}</p>`
+                ).join('');
+            } else {
+                deskripsiEl.innerHTML = '<p class="text-gray-400 italic">Tidak ada deskripsi</p>';
+            }
+            
+            // Display feedback if exists
+            const feedbackContainer = document.getElementById('detailFeedbackContainer');
+            if (feedback) {
+                const feedbackContent = document.getElementById('detailFeedbackContent');
+                feedbackContent.innerHTML = feedback.split('\n').map(line => 
+                    `<p class="mb-1">${line || '&nbsp;'}</p>`
+                ).join('');
+                feedbackContainer.classList.remove('hidden');
+            } else {
+                feedbackContainer.classList.add('hidden');
+            }
+            
+            // Format tanggal
+            if (data.tanggal) {
+                const tanggalObj = new Date(data.tanggal);
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                document.getElementById('detailTanggal').textContent = tanggalObj.toLocaleDateString('id-ID', options);
+            }
+            
+            // Format waktu
+            document.getElementById('detailWaktu').textContent = data.waktu_mulai || '-';
+            
+            // Set status badge
+            const statusBadge = document.getElementById('detailStatus');
+            statusBadge.textContent = data.status;
+            
+            // Set status color
+            statusBadge.className = 'px-3 py-1 rounded-lg text-sm font-bold uppercase inline-block ';
+            if (data.status === 'menunggu') {
+                statusBadge.className += 'bg-yellow-100 text-yellow-700';
+            } else if (data.status === 'dipanggil') {
+                statusBadge.className += 'bg-blue-100 text-blue-700';
+            } else if (data.status === 'proses') {
+                statusBadge.className += 'bg-green-100 text-green-700';
+            } else if (data.status === 'selesai') {
+                statusBadge.className += 'bg-green-100 text-green-700';
+            } else if (data.status === 'revisi') {
+                statusBadge.className += 'bg-orange-100 text-orange-700';
+            } else if (data.status === 'dilewati') {
+                statusBadge.className += 'bg-red-100 text-red-700';
+            }
+            
+            // Handle file dokumen
+            const fileContainer = document.getElementById('detailFileContainer');
+            if (data.file_dokumen) {
+                const fileLink = document.getElementById('detailFileLink');
+                const fileName = document.getElementById('detailFileName');
+                const fileIcon = document.getElementById('detailFileIcon');
+                
+                fileLink.href = '../' + data.file_dokumen;
+                
+                // Get file extension
+                const extension = data.file_dokumen.split('.').pop().toLowerCase();
+                fileName.textContent = data.file_dokumen.split('/').pop();
+                
+                // Set icon based on file type
+                if (extension === 'pdf') {
+                    fileIcon.className = 'fas fa-file-pdf text-xl';
+                } else if (extension === 'doc' || extension === 'docx') {
+                    fileIcon.className = 'fas fa-file-word text-xl';
+                } else if (extension === 'jpg' || extension === 'jpeg' || extension === 'png') {
+                    fileIcon.className = 'fas fa-file-image text-xl';
+                } else {
+                    fileIcon.className = 'fas fa-file-alt text-xl';
+                }
+                
+                fileContainer.classList.remove('hidden');
+            } else {
+                fileContainer.classList.add('hidden');
+            }
+            
+            // Show modal
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function closeDetailModal(event) {
+            // Close if clicking backdrop or close button
+            if (!event || event.target.id === 'detailModal' || event.currentTarget === event.target) {
+                document.getElementById('detailModal').classList.add('hidden');
+            }
         }
     </script>
 </body>
