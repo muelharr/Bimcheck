@@ -1,19 +1,17 @@
 <?php
 session_start();
 include '../config/koneksi.php';
+include '../config/security.php';
+include '../config/db_helper.php';
 
-// 1. Cek Login & Role
-if (!isset($_SESSION['status']) || $_SESSION['status'] != 'login' || $_SESSION['role'] != 'mahasiswa') {
-    header("location:login.php?pesan=dilarang_akses");
-    exit;
-}
+// Cek login & role
+require_login('login.php?pesan=dilarang_akses');
+require_role('mahasiswa', 'login.php?pesan=dilarang_akses');
 
-// 2. Ambil Data Mahasiswa dari Database
+// Ambil data mahasiswa
 $npm_login = $_SESSION['user'];
-$qMhs = mysqli_query($conn, "SELECT * FROM mahasiswa WHERE npm = '$npm_login'");
-$mhs = mysqli_fetch_assoc($qMhs);
+$mhs = db_fetch($conn, "SELECT * FROM mahasiswa WHERE npm = ?", 's', [$npm_login]);
 
-// SAFETY CHECK
 if (!$mhs) {
     session_unset();
     session_destroy();
@@ -73,51 +71,74 @@ if (isset($_POST['kirim_booking'])) {
         }
     }
     
-    // Validasi: Pastikan Dosen Dipilih
-    if (empty($id_dosen)) {
+    // Validasi dosen & tanggal
+    if (empty($id_dosen) || !validate_positive_integer($id_dosen)) {
         echo "<script>alert('Harap pilih Dosen Pembimbing!');</script>";
+    } elseif (!validate_date($tanggal)) {
+        echo "<script>alert('Tanggal tidak valid!');</script>";
+    } elseif (!validate_time($waktu)) {
+        echo "<script>alert('Waktu tidak valid!');</script>";
     } else {
-        // Generate Nomor Antrian
-        $cekNo = mysqli_query($conn, "SELECT COUNT(*) as total FROM antrian WHERE id_dosen='$id_dosen' AND tanggal='$tanggal'");
-        $dataNo = mysqli_fetch_assoc($cekNo);
-        $nomor_antrian = $dataNo['total'] + 1;
+        // Generate nomor antrian
+        $countData = db_fetch($conn, "SELECT COUNT(*) as total FROM antrian WHERE id_dosen = ? AND tanggal = ?", 'is', [$id_dosen, $tanggal]);
+        $nomor_antrian = $countData['total'] + 1;
 
-        $queryInsert = "INSERT INTO antrian (id_mahasiswa, id_dosen, nomor_antrian, tanggal, waktu_mulai, topik, deskripsi, file_dokumen, status) 
-                        VALUES ('$id_mahasiswa', '$id_dosen', '$nomor_antrian', '$tanggal', '$waktu', '$topik', '$deskripsi', ". ($file_dokumen ? "'$file_dokumen'" : "NULL") .", 'menunggu')";
+        // Insert booking
+        $bookingData = [
+            'id_mahasiswa' => $id_mahasiswa,
+            'id_dosen' => $id_dosen,
+            'nomor_antrian' => $nomor_antrian,
+            'tanggal' => $tanggal,
+            'waktu_mulai' => $waktu,
+            'topik' => $topik,
+            'deskripsi' => $deskripsi,
+            'file_dokumen' => $file_dokumen,
+            'status' => 'menunggu'
+        ];
 
-        if (mysqli_query($conn, $queryInsert)) {
+        $id_antrian_baru = db_insert($conn, 'antrian', $bookingData);
+
+        if ($id_antrian_baru) {
+            // Auto-create notifikasi untuk dosen
+            include_once __DIR__ . '/../actions/notification_helper.php';
+            notifyDosenNewBooking($conn, $id_antrian_baru);
+            
             echo "<script>alert('Booking Berhasil! Menunggu persetujuan dosen.'); window.location.href='dashboard_mahasiswa.php';</script>";
         } else {
-            // Tampilkan error database jika gagal (biar ketahuan kenapa)
-            echo "<script>alert('Gagal Booking: " . mysqli_error($conn) . "');</script>";
+            echo "<script>alert('Gagal Booking. Silakan coba lagi.');</script>";
         }
     }
     
     skip_booking:
 }
 
-// 4. Ambil Daftar Dosen (Query dipindah ke sini agar rapi)
-$qDosen = mysqli_query($conn, "SELECT * FROM dosen ORDER BY nama_dosen ASC");
+// Ambil daftar dosen
+$dosenList = db_fetch_all($conn, "SELECT * FROM dosen WHERE status_aktif = 'aktif' ORDER BY nama_dosen ASC");
 
-// 5. Ambil Antrian Aktif
-$qActive = mysqli_query($conn, "
-    SELECT a.*, d.nama_dosen 
-    FROM antrian a 
-    JOIN dosen d ON a.id_dosen = d.id_dosen 
-    WHERE a.id_mahasiswa = '$id_mahasiswa' 
-    AND (a.status = 'menunggu' OR a.status = 'dipanggil' OR a.status = 'proses')
-    ORDER BY a.tanggal DESC
-");
+// Ambil antrian aktif
+$activeQueue = db_fetch_all($conn,
+    "SELECT a.*, d.nama_dosen 
+     FROM antrian a 
+     JOIN dosen d ON a.id_dosen = d.id_dosen 
+     WHERE a.id_mahasiswa = ? 
+     AND a.status IN ('menunggu', 'dipanggil', 'proses') 
+     AND a.tanggal >= CURDATE() 
+     ORDER BY a.tanggal ASC, a.waktu_mulai ASC",
+    'i',
+    [$id_mahasiswa]
+);
 
 // 6. Ambil Riwayat
-$qHistory = mysqli_query($conn, "
-    SELECT a.*, d.nama_dosen 
-    FROM antrian a 
-    JOIN dosen d ON a.id_dosen = d.id_dosen 
-    WHERE a.id_mahasiswa = '$id_mahasiswa' 
-    AND (a.status = 'selesai' OR a.status = 'revisi' OR a.status = 'dilewati')
-    ORDER BY a.tanggal DESC
-");
+$historyQueue = db_fetch_all($conn,
+    "SELECT a.*, d.nama_dosen 
+     FROM antrian a 
+     JOIN dosen d ON a.id_dosen = d.id_dosen 
+     WHERE a.id_mahasiswa = ? 
+     AND a.status IN ('selesai', 'revisi', 'dilewati')
+     ORDER BY a.tanggal DESC, a.waktu_mulai DESC",
+    'i',
+    [$id_mahasiswa]
+);
 ?>
 
 <!DOCTYPE html>
@@ -157,6 +178,10 @@ $qHistory = mysqli_query($conn, "
                         <p class="text-xs text-gray-500"><?php echo $mhs['prodi']; ?></p>
                     </div>
                 </div>
+                
+                <!-- Notification Bell -->
+                <?php include __DIR__ . '/../components/notification_bell.php'; ?>
+                
                 <a href="../actions/logout.php" onclick="return confirm('Logout?')" class="text-red-600">
                     <i class="fas fa-sign-out-alt text-xl"></i>
                 </a>
@@ -185,8 +210,8 @@ $qHistory = mysqli_query($conn, "
 
             <h3 class="font-bold text-lg mb-3 text-gray-800">Antrian Aktif Anda</h3>
             <div class="space-y-3">
-                <?php if(mysqli_num_rows($qActive) > 0) { 
-                    while($row = mysqli_fetch_assoc($qActive)) { 
+                <?php if(!empty($activeQueue)) { 
+                    foreach($activeQueue as $row) { 
                         $statusClass = 'bg-yellow-100 text-yellow-700 border-yellow-500';
                         if($row['status'] == 'dipanggil') $statusClass = 'bg-green-100 text-green-700 border-green-500';
                         if($row['status'] == 'proses') $statusClass = 'bg-blue-100 text-blue-700 border-blue-500';
@@ -223,8 +248,8 @@ $qHistory = mysqli_query($conn, "
             
             <h3 class="font-bold text-lg mb-3 mt-8 text-gray-800">Riwayat Bimbingan</h3>
             <div class="space-y-3">
-                <?php if(mysqli_num_rows($qHistory) > 0) { 
-                    while($row = mysqli_fetch_assoc($qHistory)) { 
+                <?php if(!empty($historyQueue)) { 
+                    foreach($historyQueue as $row) { 
                         $statusClass = ($row['status'] == 'selesai') ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700';
                 ?>
                     <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
@@ -259,10 +284,8 @@ $qHistory = mysqli_query($conn, "
                         <select name="id_dosen" class="w-full border rounded-lg p-2 bg-white" required>
                             <option value="">-- Pilih Dosen --</option>
                             <?php 
-                            if (mysqli_num_rows($qDosen) > 0) {
-                                // Kita TIDAK PAKAI mysqli_data_seek, langsung loop saja
-                                // karena query baru dijalankan di atas
-                                while($d = mysqli_fetch_assoc($qDosen)) { 
+                            if (!empty($dosenList)) {
+                                foreach($dosenList as $d) { 
                             ?>
                                 <option value="<?php echo $d['id_dosen']; ?>">
                                     <?php echo $d['nama_dosen']; ?> (<?php echo $d['keahlian']; ?>)
@@ -524,10 +547,10 @@ $qHistory = mysqli_query($conn, "
             .then(data => {
                 if (data.status === 'success') {
                     alert("✅ SUKSES: " + data.message);
-                    window.location.reload(); // Reload agar status antrian berubah
+                    window.location.reload();
                 } else {
                     alert("❌ GAGAL: " + data.message);
-                    showPage('dashboard'); // Kembali ke dashboard
+                    showPage('dashboard');
                 }
             })
             .catch(err => {

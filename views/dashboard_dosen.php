@@ -7,6 +7,7 @@ include '../config/koneksi.php';
 $queryTimeout = "UPDATE antrian 
                  SET status = 'dilewati' 
                  WHERE status = 'dipanggil' 
+                 AND waktu_panggil IS NOT NULL
                  AND TIMESTAMPDIFF(MINUTE, waktu_panggil, NOW()) >= 60";
 mysqli_query($conn, $queryTimeout);
 
@@ -103,6 +104,10 @@ $qRiwayat = mysqli_query($conn, "
                         <p class="text-xs text-purple-200">Kode: <?php echo $dosen['kode_dosen']; ?></p>
                     </div>
                 </div>
+                
+                <!-- Notification Bell -->
+                <?php include __DIR__ . '/../components/notification_bell.php'; ?>
+                
                 <a href="../actions/logout.php" onclick="return confirm('Keluar?')" class="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition">
                     <i class="fas fa-sign-out-alt"></i>
                 </a>
@@ -766,6 +771,13 @@ $qRiwayat = mysqli_query($conn, "
             
             // Show modal
             document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function closeDetailModal(event) {
+            // Close if clicking backdrop or close button
+            if (!event || event.target.id === 'detailModal' || event.currentTarget === event.target) {
+                document.getElementById('detailModal').classList.add('hidden');
+            }
         }
 
         function closeDetailModal(event) {

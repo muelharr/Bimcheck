@@ -35,7 +35,6 @@ if ($view == 'dosen') {
     
     // Data Statistik Status (dengan default 0 jika null)
     $qSelesai = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM antrian WHERE status='selesai'"))['total'] ?? 0;
-    $qRevisi = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM antrian WHERE status='revisi'"))['total'] ?? 0;
     $qMenunggu = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM antrian WHERE status='menunggu'"))['total'] ?? 0;
     $qProses = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM antrian WHERE status='proses'"))['total'] ?? 0;
     $qDilewati = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM antrian WHERE status='dilewati'"))['total'] ?? 0;
@@ -172,7 +171,6 @@ if ($view == 'dosen') {
                     </div>
                     <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
                         <div class="flex items-center"><span class="w-3 h-3 bg-green-500 rounded mr-2"></span>Selesai: <?php echo $qSelesai; ?></div>
-                        <div class="flex items-center"><span class="w-3 h-3 bg-orange-500 rounded mr-2"></span>Revisi: <?php echo $qRevisi; ?></div>
                         <div class="flex items-center"><span class="w-3 h-3 bg-yellow-500 rounded mr-2"></span>Menunggu: <?php echo $qMenunggu; ?></div>
                         <div class="flex items-center"><span class="w-3 h-3 bg-blue-500 rounded mr-2"></span>Proses: <?php echo $qProses; ?></div>
                         <div class="flex items-center"><span class="w-3 h-3 bg-red-500 rounded mr-2"></span>Dilewati: <?php echo $qDilewati; ?></div>
@@ -201,14 +199,10 @@ if ($view == 'dosen') {
             </div>
 
             <!-- 4. Statistik Detail (Card) -->
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white shadow-lg">
                     <p class="text-xs opacity-90 mb-1">Selesai</p>
                     <h3 class="text-3xl font-bold"><?php echo $qSelesai; ?></h3>
-                </div>
-                <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 text-white shadow-lg">
-                    <p class="text-xs opacity-90 mb-1">Revisi</p>
-                    <h3 class="text-3xl font-bold"><?php echo $qRevisi; ?></h3>
                 </div>
                 <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl p-4 text-white shadow-lg">
                     <p class="text-xs opacity-90 mb-1">Menunggu</p>
@@ -266,7 +260,20 @@ if ($view == 'dosen') {
                                         <td class="px-6 py-4 font-bold"><?php echo $row['kode_dosen']; ?></td>
                                         <td class="px-6 py-4"><?php echo $row['nama_dosen']; ?></td>
                                         <td class="px-6 py-4 text-gray-500"><?php echo $row['keahlian']; ?></td>
+                                        <td class="px-6 py-4 text-center">
+                                            <?php 
+                                            $status = $row['status_aktif'] ?? 'aktif';
+                                            $badgeClass = ($status == 'aktif') ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600';
+                                            $iconClass = ($status == 'aktif') ? 'fa-check-circle' : 'fa-ban';
+                                            ?>
+                                            <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase <?php echo $badgeClass; ?>">
+                                                <i class="fas <?php echo $iconClass; ?> mr-1"></i><?php echo $status; ?>
+                                            </span>
+                                        </td>
                                         <td class="px-6 py-4 text-center flex justify-center gap-2">
+                                            <button onclick='toggleDosenStatus(<?php echo json_encode($row); ?>)' class="<?php echo ($status == 'aktif') ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-600'; ?> px-3 py-1 rounded text-xs font-bold hover:opacity-80">
+                                                <?php echo ($status == 'aktif') ? 'Nonaktifkan' : 'Aktifkan'; ?>
+                                            </button>
                                             <button onclick='openModal("dosen", "edit", <?php echo json_encode($row); ?>)' class="bg-blue-100 text-blue-600 px-3 py-1 rounded text-xs font-bold hover:bg-blue-200">Edit</button>
                                             <a href="../actions/admin_crud.php?aksi=hapus&type=dosen&id=<?php echo $row['id_dosen']; ?>" onclick="return confirm('Hapus data ini?')" class="bg-red-100 text-red-600 px-3 py-1 rounded text-xs font-bold hover:bg-red-200">Hapus</a>
                                         </td>
@@ -302,6 +309,7 @@ if ($view == 'dosen') {
                     <input type="text" name="nama" id="namaMhs" placeholder="Nama Lengkap" class="w-full border p-2 rounded" required>
                     <input type="text" name="prodi" id="prodiMhs" placeholder="Program Studi" class="w-full border p-2 rounded" required>
                     <input type="email" name="email" id="emailMhs" placeholder="Email" class="w-full border p-2 rounded" required>
+                    <input type="text" name="no_telepon" id="noTeleponMhs" placeholder="Nomor Telepon (08xxx)" class="w-full border p-2 rounded" maxlength="15">
                     <input type="password" name="password" id="passMhs" placeholder="Password (Kosongkan jika tidak ubah)" class="w-full border p-2 rounded">
                 </div>
                 <div class="mt-4 flex justify-end gap-2">
@@ -321,8 +329,10 @@ if ($view == 'dosen') {
                 <input type="hidden" name="id_dosen" id="idDosen">
                 
                 <div class="space-y-3">
-                    <input type="text" name="kode_dosen" id="kodeDosen" placeholder="Kode Dosen (ex: DSN01)" class="w-full border p-2 rounded" required>
+                    <input type="text" name="kode_dosen" id="kodeDosen" placeholder="Kode Dosen (ex: MYH)" class="w-full border p-2 rounded" required>
                     <input type="text" name="nama_dosen" id="namaDosen" placeholder="Nama Dosen" class="w-full border p-2 rounded" required>
+                    <input type="email" name="email" id="emailDosen" placeholder="Email" class="w-full border p-2 rounded" required>
+                    <input type="text" name="no_telepon" id="noTeleponDosen" placeholder="Nomor Telepon" class="w-full border p-2 rounded" maxlength="15">
                     <input type="text" name="keahlian" id="keahlianDosen" placeholder="Keahlian / Bidang" class="w-full border p-2 rounded" required>
                     <input type="password" name="password" id="passDosen" placeholder="Password (Kosongkan jika tidak ubah)" class="w-full border p-2 rounded">
                 </div>
@@ -343,18 +353,16 @@ if ($view == 'dosen') {
         new Chart(statusCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Selesai', 'Revisi', 'Menunggu', 'Proses', 'Dilewati'],
+                labels: ['Selesai', 'Menunggu', 'Proses', 'Dilewati'],
                 datasets: [{
                     data: [
                         <?php echo $qSelesai; ?>,
-                        <?php echo $qRevisi; ?>,
                         <?php echo $qMenunggu; ?>,
                         <?php echo $qProses; ?>,
                         <?php echo $qDilewati; ?>
                     ],
                     backgroundColor: [
                         '#10b981', // green
-                        '#f97316', // orange
                         '#eab308', // yellow
                         '#3b82f6', // blue
                         '#ef4444'  // red
@@ -507,6 +515,7 @@ if ($view == 'dosen') {
                     document.getElementById('namaMhs').value = data.nama;
                     document.getElementById('prodiMhs').value = data.prodi;
                     document.getElementById('emailMhs').value = data.email;
+                    document.getElementById('noTeleponMhs').value = data.no_telepon || '';
                     document.getElementById('passMhs').required = false; // Pass tidak wajib saat edit
                 } else {
                     document.getElementById('idMhs').value = '';
@@ -514,6 +523,7 @@ if ($view == 'dosen') {
                     document.getElementById('namaMhs').value = '';
                     document.getElementById('prodiMhs').value = '';
                     document.getElementById('emailMhs').value = '';
+                    document.getElementById('noTeleponMhs').value = '';
                     document.getElementById('passMhs').required = true;
                 }
                 modal.classList.remove('hidden');
@@ -527,17 +537,51 @@ if ($view == 'dosen') {
                     document.getElementById('idDosen').value = data.id_dosen;
                     document.getElementById('kodeDosen').value = data.kode_dosen;
                     document.getElementById('namaDosen').value = data.nama_dosen;
+                    document.getElementById('emailDosen').value = data.email || '';
+                    document.getElementById('noTeleponDosen').value = data.no_telepon || '';
                     document.getElementById('keahlianDosen').value = data.keahlian;
                     document.getElementById('passDosen').required = false;
                 } else {
                     document.getElementById('idDosen').value = '';
                     document.getElementById('kodeDosen').value = '';
                     document.getElementById('namaDosen').value = '';
+                    document.getElementById('emailDosen').value = '';
+                    document.getElementById('noTeleponDosen').value = '';
                     document.getElementById('keahlianDosen').value = '';
                     document.getElementById('passDosen').required = true;
                 }
                 modal.classList.remove('hidden');
             }
+        }
+
+        // Toggle Dosen Status Aktif
+        function toggleDosenStatus(data) {
+            const currentStatus = data.status_aktif || 'aktif';
+            const newStatus = (currentStatus === 'aktif') ? 'nonaktif' : 'aktif';
+            const confirmMsg = (newStatus === 'nonaktif') 
+                ? `Nonaktifkan dosen ${data.nama_dosen}? Dosen tidak akan muncul di pilihan mahasiswa.`
+                : `Aktifkan kembali dosen ${data.nama_dosen}?`;
+            
+            if (!confirm(confirmMsg)) return;
+            
+            fetch('../actions/admin_settings.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `toggle_dosen_status=1&id_dosen=${data.id_dosen}&status_baru=${newStatus}`
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === 'success') {
+                    alert('Status berhasil diubah!');
+                    location.reload();
+                } else {
+                    alert('Gagal: ' + result.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Terjadi kesalahan!');
+            });
         }
     </script>
 </body>

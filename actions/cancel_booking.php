@@ -1,14 +1,14 @@
 <?php
 session_start();
 include __DIR__ . '/../config/koneksi.php';
+include __DIR__ . '/../config/security.php';
+include __DIR__ . '/../config/db_helper.php';
 
 header('Content-Type: application/json');
 
 // Check login
-if (!isset($_SESSION['status']) || $_SESSION['status'] != 'login' || $_SESSION['role'] != 'mahasiswa') {
-    echo json_encode(['status' => 'error', 'message' => 'Tidak ada akses. Silakan login.']);
-    exit;
-}
+require_login();
+require_role('mahasiswa');
 
 // Check POST method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -16,10 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Get mahasiswa data from session (same as dashboard)
+// Get mahasiswa data
 $npm_login = $_SESSION['user'];
-$qMhs = mysqli_query($conn, "SELECT * FROM mahasiswa WHERE npm = '$npm_login'");
-$mhs = mysqli_fetch_assoc($qMhs);
+$mhs = db_fetch($conn, "SELECT * FROM mahasiswa WHERE npm = ?", 's', [$npm_login]);
 
 if (!$mhs) {
     echo json_encode(['status' => 'error', 'message' => 'Data mahasiswa tidak ditemukan']);
@@ -28,24 +27,25 @@ if (!$mhs) {
 
 $id_mahasiswa = $mhs['id_mahasiswa'];
 
-// Get booking ID from POST
+// Get booking ID
 $id_antrian = isset($_POST['id_antrian']) ? intval($_POST['id_antrian']) : 0;
 
-if ($id_antrian <= 0) {
+if (!validate_positive_integer($id_antrian)) {
     echo json_encode(['status' => 'error', 'message' => 'ID antrian tidak valid']);
     exit;
 }
 
 // Check ownership and status
-$query = "SELECT * FROM antrian WHERE id_antrian = $id_antrian AND id_mahasiswa = $id_mahasiswa";
-$result = mysqli_query($conn, $query);
+$booking = db_fetch($conn, 
+    "SELECT * FROM antrian WHERE id_antrian = ? AND id_mahasiswa = ?", 
+    'ii', 
+    [$id_antrian, $id_mahasiswa]
+);
 
-if (!$result || mysqli_num_rows($result) == 0) {
+if (!$booking) {
     echo json_encode(['status' => 'error', 'message' => 'Booking tidak ditemukan atau bukan milik Anda']);
     exit;
 }
-
-$booking = mysqli_fetch_assoc($result);
 
 // Check if status is 'menunggu'
 if ($booking['status'] != 'menunggu') {
@@ -54,14 +54,11 @@ if ($booking['status'] != 'menunggu') {
 }
 
 // Delete booking
-$deleteQuery = "DELETE FROM antrian WHERE id_antrian = $id_antrian";
-$deleteResult = mysqli_query($conn, $deleteQuery);
+$deleted = db_delete($conn, 'antrian', 'id_antrian', $id_antrian);
 
-if ($deleteResult) {
+if ($deleted) {
     echo json_encode(['status' => 'success', 'message' => 'Booking berhasil dibatalkan']);
 } else {
-    echo json_encode(['status' => 'error', 'message' => 'Gagal membatalkan booking: ' . mysqli_error($conn)]);
+    echo json_encode(['status' => 'error', 'message' => 'Gagal membatalkan booking']);
 }
-
-mysqli_close($conn);
 ?>

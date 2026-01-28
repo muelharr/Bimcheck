@@ -6,6 +6,7 @@ if (isset($_POST['register'])) {
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $npm = mysqli_real_escape_string($conn, $_POST['identityNumber']);
     $prodi = mysqli_real_escape_string($conn, $_POST['unit']);
+    $no_telepon = mysqli_real_escape_string($conn, $_POST['no_telepon'] ?? '');
     
     // --- FITUR KEAMANAN: ENKRIPSI PASSWORD ---
     $password_raw = $_POST['password'];
@@ -17,8 +18,8 @@ if (isset($_POST['register'])) {
         echo "<script>alert('NPM sudah terdaftar! Silakan login.'); window.location.href='register.php';</script>";
     } else {
         // Simpan Password yang sudah dienkripsi ($password_hash)
-        $query = "INSERT INTO mahasiswa (npm, nama, email, prodi, password) 
-          VALUES ('$npm', '$nama', '$email', '$prodi', '$password_hash')";
+        $query = "INSERT INTO mahasiswa (npm, nama, email, prodi, no_telepon, password) 
+          VALUES ('$npm', '$nama', '$email', '$prodi', '$no_telepon', '$password_hash')";
         
         if (mysqli_query($conn, $query)) {
             echo "<script>
@@ -80,6 +81,12 @@ if (isset($_POST['register'])) {
             <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Email Kampus</label>
                 <input type="email" name="email" class="w-full px-5 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="nama@mahasiswa.ulm.ac.id" required>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Nomor Telepon</label>
+                <input type="text" name="no_telepon" class="w-full px-5 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="08xxx" maxlength="15">
+                <p class="text-xs text-gray-400 mt-1">*Opsional, untuk kontak darurat</p>
             </div>
 
             <div>

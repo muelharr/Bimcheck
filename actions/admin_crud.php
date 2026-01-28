@@ -39,14 +39,15 @@ if (isset($_POST['simpan_mhs'])) {
     $nama = mysqli_real_escape_string($conn, $_POST['nama']);
     $prodi = mysqli_real_escape_string($conn, $_POST['prodi']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $no_telepon = mysqli_real_escape_string($conn, $_POST['no_telepon'] ?? '');
     $password_raw = $_POST['password'];
 
     if ($aksi == 'tambah') {
         // ENKRIPSI PASSWORD SAAT TAMBAH
         $password_hash = password_hash($password_raw, PASSWORD_DEFAULT);
-        $query = "INSERT INTO mahasiswa (npm, nama, prodi, email, password) VALUES ('$npm', '$nama', '$prodi', '$email', '$password_hash')";
+        $query = "INSERT INTO mahasiswa (npm, nama, prodi, email, no_telepon, password) VALUES ('$npm', '$nama', '$prodi', '$email', '$no_telepon', '$password_hash')";
     } else {
-        $query = "UPDATE mahasiswa SET npm='$npm', nama='$nama', prodi='$prodi', email='$email'";
+        $query = "UPDATE mahasiswa SET npm='$npm', nama='$nama', prodi='$prodi', email='$email', no_telepon='$no_telepon'";
         if (!empty($password_raw)) { // Update password cuma kalau diisi
             $password_hash = password_hash($password_raw, PASSWORD_DEFAULT);
             $query .= ", password='$password_hash'";
@@ -67,15 +68,17 @@ if (isset($_POST['simpan_dosen'])) {
     $id = $_POST['id_dosen'];
     $kode = mysqli_real_escape_string($conn, $_POST['kode_dosen']);
     $nama = mysqli_real_escape_string($conn, $_POST['nama_dosen']);
+    $email = mysqli_real_escape_string($conn, $_POST['email'] ?? '');
+    $no_telepon = mysqli_real_escape_string($conn, $_POST['no_telepon'] ?? '');
     $keahlian = mysqli_real_escape_string($conn, $_POST['keahlian']);
     $password_raw = $_POST['password'];
 
     if ($aksi == 'tambah') {
         // ENKRIPSI PASSWORD SAAT TAMBAH (PENTING!)
         $password_hash = password_hash($password_raw, PASSWORD_DEFAULT);
-        $query = "INSERT INTO dosen (kode_dosen, nama_dosen, keahlian, password) VALUES ('$kode', '$nama', '$keahlian', '$password_hash')";
+        $query = "INSERT INTO dosen (kode_dosen, nama_dosen, email, no_telepon, keahlian, password, status_aktif) VALUES ('$kode', '$nama', '$email', '$no_telepon', '$keahlian', '$password_hash', 'aktif')";
     } else {
-        $query = "UPDATE dosen SET kode_dosen='$kode', nama_dosen='$nama', keahlian='$keahlian'";
+        $query = "UPDATE dosen SET kode_dosen='$kode', nama_dosen='$nama', email='$email', no_telepon='$no_telepon', keahlian='$keahlian'";
         if (!empty($password_raw)) {
             $password_hash = password_hash($password_raw, PASSWORD_DEFAULT);
             $query .= ", password='$password_hash'";

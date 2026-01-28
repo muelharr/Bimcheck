@@ -174,16 +174,17 @@
             <!-- WORKFLOW VIEW (Image) -->
             <div id="workflow-view" class="transition-opacity duration-300">
                 <div class="flex justify-center">
-                    <img src="uploads/img/Workflow.png" alt="Workflow BimCheck" class="w-full max-w-4xl rounded-2xl shadow-xl">
+                    <img src="uploads/img/QR Code Validation Flow-2026-01-28-013823.png" alt="Workflow BimCheck" class="w-full max-w-4xl rounded-2xl shadow-xl">
                 </div>
             </div>
 
             <!-- FLOWCHART VIEW (Image) -->
             <div id="flowchart-view" class="hidden transition-opacity duration-300">
                 <div class="flex justify-center">
-                    <img src="uploads/img/Flowchart.png" alt="BimCheck Complete Flowchart" class="w-full max-w-4xl rounded-2xl shadow-xl">
+                    <img src="uploads/img/QR Code Validation Flow-2026-01-28-014055.png" alt="BimCheck Complete Flowchart" class="w-full max-w-4xl rounded-2xl shadow-xl">
                 </div>
             </div>
+
         </div>
     </section>
 
